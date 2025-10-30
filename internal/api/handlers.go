@@ -14,11 +14,13 @@ import (
 
 type Handler struct {
 	mtsService *service.MTSService
+	cfg        *config.Config
 }
 
-func NewHandler(mtsService *service.MTSService) *Handler {
+func NewHandler(mtsService *service.MTSService, cfg *config.Config) *Handler {
 	return &Handler{
 		mtsService: mtsService,
+		cfg:        cfg,
 	}
 }
 
@@ -59,7 +61,7 @@ func (h *Handler) PlaceTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Build MTS ticket request
-	ticket := buildTicketRequest(&req)
+	ticket := h.buildTicketRequest(&req)
 
 	log.Printf("Sending ticket: %s (correlation: %s)", ticket.Content.TicketID, ticket.CorrelationID)
 
@@ -152,7 +154,7 @@ func validatePlaceTicketRequest(req *PlaceTicketRequest) error {
 	return nil
 }
 
-func buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequest {
+func (h *Handler) buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequest {
 	// Generate correlation ID
 	correlationID := uuid.New().String()
 
@@ -205,7 +207,7 @@ func buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequest {
 			TestSource: req.TestSource,
 			OddsChange: oddsChange,
 			Sender: models.Sender{
-				Bookmaker: "1", // Placeholder, should be set from config
+				Bookmaker: h.cfg.BookmakerID,
 				Currency:  req.Currency,
 				Channel:   channel,
 				EndCustomer: models.EndCustomer{

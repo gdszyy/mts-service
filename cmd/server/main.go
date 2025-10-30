@@ -32,7 +32,7 @@ func main() {
 	}
 
 	// Create API handler
-	handler := api.NewHandler(mtsService)
+	handler := api.NewHandler(mtsService, cfg)
 
 	// Setup routes
 	mux := http.NewServeMux()

@@ -18,7 +18,7 @@ Required environment variables:
 ```bash
 MTS_CLIENT_ID=your_client_id
 MTS_CLIENT_SECRET=your_client_secret
-MTS_BOOKMAKER_ID=your_bookmaker_id
+MTS_BOOKMAKER_ID=your_bookmaker_id # Get from whoami.xml or Sportradar support
 MTS_PRODUCTION=false  # Set to true for production
 PORT=8080  # Optional, defaults to 8080
 ```
@@ -143,7 +143,7 @@ Response (rejected):
 # Set environment variables
 export MTS_CLIENT_ID=your_client_id
 export MTS_CLIENT_SECRET=your_client_secret
-export MTS_BOOKMAKER_ID=your_bookmaker_id
+export MTS_BOOKMAKER_ID=your_bookmaker_id # Get from whoami.xml or Sportradar support
 export MTS_PRODUCTION=false
 
 # Run the service
