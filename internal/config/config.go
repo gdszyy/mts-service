@@ -14,6 +14,7 @@ type Config struct {
 	ClientID     string
 	ClientSecret string
 	BookmakerID  string
+	VirtualHost  string
 	AccessToken  string // Optional: UOF Access Token for whoami.xml
 	Production   bool
 
@@ -27,6 +28,7 @@ func Load() (*Config, error) {
 		ClientID:     getEnv("MTS_CLIENT_ID", ""),
 		ClientSecret: getEnv("MTS_CLIENT_SECRET", ""),
 		BookmakerID:  getEnv("MTS_BOOKMAKER_ID", ""),
+		VirtualHost:  getEnv("MTS_VIRTUAL_HOST", ""),
 		AccessToken:  getEnv("UOF_ACCESS_TOKEN", ""),
 		Production:   getEnvBool("MTS_PRODUCTION", false),
 		AuthURL:      "https://auth.sportradar.com/oauth/token",
@@ -41,6 +43,30 @@ func Load() (*Config, error) {
 	// BookmakerID is optional if AccessToken is provided (will be fetched from whoami.xml)
 	if cfg.BookmakerID == "" && cfg.AccessToken == "" {
 		return nil, fmt.Errorf("either MTS_BOOKMAKER_ID or UOF_ACCESS_TOKEN is required")
+	}
+
+	// If AccessToken is provided, try to fetch Bookmaker ID and VirtualHost
+	if cfg.AccessToken != "" && (cfg.BookmakerID == "" || cfg.VirtualHost == "") {
+		log.Println("Bookmaker ID or VirtualHost not provided, fetching from whoami.xml...")
+		bookmakerID, virtualHost, err := client.FetchBookmakerInfo(cfg.AccessToken, cfg.Production)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch Bookmaker Info: %w", err)
+		}
+		if cfg.BookmakerID == "" {
+			cfg.BookmakerID = bookmakerID
+		}
+		if cfg.VirtualHost == "" {
+			cfg.VirtualHost = virtualHost
+		}
+		log.Printf("Bookmaker Info fetched successfully: BookmakerID=%s, VirtualHost=%s", cfg.BookmakerID, cfg.VirtualHost)
+	}
+
+	// Final check for required fields
+	if cfg.BookmakerID == "" {
+		return nil, fmt.Errorf("MTS_BOOKMAKER_ID is required and could not be fetched")
+	}
+	if cfg.VirtualHost == "" {
+		return nil, fmt.Errorf("MTS_VIRTUAL_HOST is required and could not be fetched")
 	}
 
 	return cfg, nil

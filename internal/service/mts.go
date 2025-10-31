@@ -55,10 +55,9 @@ type MTSService struct {
 }
 
 func NewMTSService(cfg *config.Config) *MTSService {
-	wsURL := IntegrationWSURL
+	wsURL := fmt.Sprintf("wss://%s/v1/mts", cfg.VirtualHost)
 	audience := IntegrationAudience
 	if cfg.Production {
-		wsURL = ProductionWSURL
 		audience = ProductionAudience
 	}
 
