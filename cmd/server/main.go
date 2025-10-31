@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/gdsZyy/mts-service/internal/api"
+	"github.com/gdsZyy/mts-service/internal/client"
 	"github.com/gdsZyy/mts-service/internal/config"
 	"github.com/gdsZyy/mts-service/internal/service"
 )
@@ -22,6 +23,17 @@ func main() {
 	}
 
 	log.Printf("Configuration loaded: Production=%v, Port=%s", cfg.Production, cfg.Port)
+
+	// Auto-fetch Bookmaker ID if not provided but AccessToken is available
+	if cfg.BookmakerID == "" && cfg.AccessToken != "" {
+		log.Println("Bookmaker ID not provided, fetching from whoami.xml...")
+		bookmakerID, err := client.FetchBookmakerID(cfg.AccessToken, cfg.Production)
+		if err != nil {
+			log.Fatalf("Failed to fetch Bookmaker ID: %v", err)
+		}
+		cfg.BookmakerID = bookmakerID
+		log.Printf("Bookmaker ID fetched successfully: %s", bookmakerID)
+	}
 
 	// Create MTS service
 	mtsService := service.NewMTSService(cfg)

@@ -14,6 +14,7 @@ type Config struct {
 	ClientID     string
 	ClientSecret string
 	BookmakerID  string
+	AccessToken  string // Optional: UOF Access Token for whoami.xml
 	Production   bool
 
 	// OAuth
@@ -26,6 +27,7 @@ func Load() (*Config, error) {
 		ClientID:     getEnv("MTS_CLIENT_ID", ""),
 		ClientSecret: getEnv("MTS_CLIENT_SECRET", ""),
 		BookmakerID:  getEnv("MTS_BOOKMAKER_ID", ""),
+		AccessToken:  getEnv("UOF_ACCESS_TOKEN", ""),
 		Production:   getEnvBool("MTS_PRODUCTION", false),
 		AuthURL:      "https://auth.sportradar.com/oauth/token",
 	}
@@ -36,8 +38,9 @@ func Load() (*Config, error) {
 	if cfg.ClientSecret == "" {
 		return nil, fmt.Errorf("MTS_CLIENT_SECRET is required")
 	}
-	if cfg.BookmakerID == "" {
-		return nil, fmt.Errorf("MTS_BOOKMAKER_ID is required")
+	// BookmakerID is optional if AccessToken is provided (will be fetched from whoami.xml)
+	if cfg.BookmakerID == "" && cfg.AccessToken == "" {
+		return nil, fmt.Errorf("either MTS_BOOKMAKER_ID or UOF_ACCESS_TOKEN is required")
 	}
 
 	return cfg, nil

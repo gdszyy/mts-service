@@ -18,10 +18,15 @@ Required environment variables:
 ```bash
 MTS_CLIENT_ID=your_client_id
 MTS_CLIENT_SECRET=your_client_secret
-MTS_BOOKMAKER_ID=your_bookmaker_id # Get from whoami.xml or Sportradar support
+MTS_BOOKMAKER_ID=your_bookmaker_id # Optional if UOF_ACCESS_TOKEN is provided
+UOF_ACCESS_TOKEN=your_uof_token # Optional: Auto-fetch Bookmaker ID from whoami.xml
 MTS_PRODUCTION=false  # Set to true for production
 PORT=8080  # Optional, defaults to 8080
 ```
+
+**Note**: You can either:
+- Provide `MTS_BOOKMAKER_ID` directly, OR
+- Provide `UOF_ACCESS_TOKEN` to auto-fetch the Bookmaker ID from `whoami.xml`
 
 ## API Endpoints
 
