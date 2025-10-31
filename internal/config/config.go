@@ -34,9 +34,12 @@ func Load() (*Config, error) {
 		VirtualHost:  getEnv("MTS_VIRTUAL_HOST", ""),
 		AccessToken:  getEnv("UOF_ACCESS_TOKEN", ""),
 		Production:   getEnvBool("MTS_PRODUCTION", false),
-			AuthURL:      getAuthURL(cfg.Production),
+				AuthURL:      "", // Will be set after Production is determined
 			UOFAPIBaseURL: getEnv("UOF_API_BASE_URL", "https://global.api.betradar.com"),
-	}
+		}
+
+		// Set AuthURL after Production is determined
+		cfg.AuthURL = getAuthURL(cfg.Production)
 
 	if cfg.ClientID == "" {
 		return nil, fmt.Errorf("MTS_CLIENT_ID is required")
