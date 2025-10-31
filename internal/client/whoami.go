@@ -18,7 +18,7 @@ type WhoAmIResponse struct {
 // FetchBookmakerInfo calls the whoami.xml endpoint to get the Bookmaker ID and VirtualHost
 func FetchBookmakerInfo(accessToken string, uofAPIBaseURL string) (string, string, error) {
 	// Construct the API URL using the provided base URL
-	apiURL := fmt.Sprintf("%s/whoami.xml", uofAPIBaseURL)
+	apiURL := fmt.Sprintf("%s/v1/users/whoami.xml", uofAPIBaseURL)
 
 	// Create HTTP request
 	req, err := http.NewRequest("GET", apiURL, nil)
