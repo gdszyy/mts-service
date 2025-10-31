@@ -55,7 +55,12 @@ type MTSService struct {
 }
 
 func NewMTSService(cfg *config.Config) *MTSService {
-	wsURL := fmt.Sprintf("wss://%s/v1/mts", cfg.VirtualHost)
+	wsURL := fmt.Sprintf("wss://%s/api/v1/mts", cfg.VirtualHost)
+	if cfg.Production {
+		wsURL = fmt.Sprintf("wss://%s/api/v1/mts", cfg.VirtualHost)
+	} else {
+		wsURL = fmt.Sprintf("wss://%s/api/v1/mts", cfg.VirtualHost)
+	}
 	audience := IntegrationAudience
 	if cfg.Production {
 		audience = ProductionAudience
@@ -113,9 +118,9 @@ func (s *MTSService) refreshToken() (string, error) {
 	s.tokenMu.Lock()
 	defer s.tokenMu.Unlock()
 
-	if s.token != nil && time.Now().Before(s.tokenExpiry) {
-		return s.token.AccessToken, nil
-	}
+			if s.token != nil && time.Now().Before(s.tokenExpiry) {
+				return s.token.AccessToken, nil
+			}
 
 	data := url.Values{}
 	data.Set("grant_type", "client_credentials")
