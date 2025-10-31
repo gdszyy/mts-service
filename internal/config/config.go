@@ -21,7 +21,8 @@ type Config struct {
 	Production   bool
 
 	// OAuth
-	AuthURL string
+		AuthURL string
+		UOFAPIBaseURL string // UOF API base URL for whoami.xml
 }
 
 func Load() (*Config, error) {
@@ -33,7 +34,8 @@ func Load() (*Config, error) {
 		VirtualHost:  getEnv("MTS_VIRTUAL_HOST", ""),
 		AccessToken:  getEnv("UOF_ACCESS_TOKEN", ""),
 		Production:   getEnvBool("MTS_PRODUCTION", false),
-		AuthURL:      "https://auth.sportradar.com/oauth/token",
+			AuthURL:      "https://auth.sportradar.com/oauth/token",
+			UOFAPIBaseURL: getEnv("UOF_API_BASE_URL", "https://global.api.betradar.com"),
 	}
 
 	if cfg.ClientID == "" {
@@ -49,8 +51,8 @@ func Load() (*Config, error) {
 
 	// If AccessToken is provided, try to fetch Bookmaker ID and VirtualHost
 	if cfg.AccessToken != "" && (cfg.BookmakerID == "" || cfg.VirtualHost == "") {
-		log.Println("Bookmaker ID or VirtualHost not provided, fetching from whoami.xml...")
-		bookmakerID, virtualHost, err := client.FetchBookmakerInfo(cfg.AccessToken, cfg.Production)
+			log.Println("Bookmaker ID or VirtualHost not provided, fetching from whoami.xml...")
+			bookmakerID, virtualHost, err := client.FetchBookmakerInfo(cfg.AccessToken, cfg.UOFAPIBaseURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch Bookmaker Info: %w", err)
 		}

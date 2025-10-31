@@ -19,6 +19,8 @@ Required environment variables:
 MTS_CLIENT_ID=your_client_id
 MTS_CLIENT_SECRET=your_client_secret
 MTS_BOOKMAKER_ID=your_bookmaker_id # Optional if UOF_ACCESS_TOKEN is provided
+MTS_VIRTUAL_HOST=mts-api-ci.betradar.com # Optional if UOF_ACCESS_TOKEN is provided
+UOF_API_BASE_URL=https://global.api.betradar.com # Optional: Base URL for whoami.xml (e.g., https://stgapi.betradar.com)
 UOF_ACCESS_TOKEN=your_uof_token # Optional: Auto-fetch Bookmaker ID from whoami.xml
 MTS_PRODUCTION=false  # Set to true for production
 PORT=8080  # Optional, defaults to 8080
@@ -26,7 +28,7 @@ PORT=8080  # Optional, defaults to 8080
 
 **Note**: You can either:
 - Provide `MTS_BOOKMAKER_ID` directly, OR
-- Provide `UOF_ACCESS_TOKEN` to auto-fetch the Bookmaker ID from `whoami.xml`
+- Provide `UOF_ACCESS_TOKEN` to auto-fetch the Bookmaker ID and VirtualHost from `whoami.xml` (requires `UOF_API_BASE_URL`)
 
 ## API Endpoints
 
@@ -149,6 +151,8 @@ Response (rejected):
 export MTS_CLIENT_ID=your_client_id
 export MTS_CLIENT_SECRET=your_client_secret
 export MTS_BOOKMAKER_ID=your_bookmaker_id # Get from whoami.xml or Sportradar support
+export MTS_VIRTUAL_HOST=mts-api-ci.betradar.com # Get from whoami.xml or Sportradar support
+export UOF_API_BASE_URL=https://global.api.betradar.com # UOF API Base URL (e.g., https://stgapi.betradar.com)
 export MTS_PRODUCTION=false
 
 # Run the service
@@ -172,6 +176,8 @@ go build -o mts-service ./cmd/server
    - `MTS_CLIENT_ID`
    - `MTS_CLIENT_SECRET`
    - `MTS_BOOKMAKER_ID`
+- `MTS_VIRTUAL_HOST`
+- `UOF_API_BASE_URL`
    - `MTS_PRODUCTION`
 4. Railway will automatically detect the Dockerfile and deploy
 

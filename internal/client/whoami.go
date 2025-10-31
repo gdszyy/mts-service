@@ -16,12 +16,9 @@ type WhoAmIResponse struct {
 }
 
 // FetchBookmakerInfo calls the whoami.xml endpoint to get the Bookmaker ID and VirtualHost
-func FetchBookmakerInfo(accessToken string, production bool) (string, string, error) {
-	// Determine the API URL based on environment
-	apiURL := "https://global.api.betradar.com/v1/users/whoami.xml"
-	if production {
-		apiURL = "https://api.betradar.com/v1/users/whoami.xml"
-	}
+func FetchBookmakerInfo(accessToken string, uofAPIBaseURL string) (string, string, error) {
+	// Construct the API URL using the provided base URL
+	apiURL := fmt.Sprintf("%s/whoami.xml", uofAPIBaseURL)
 
 	// Create HTTP request
 	req, err := http.NewRequest("GET", apiURL, nil)

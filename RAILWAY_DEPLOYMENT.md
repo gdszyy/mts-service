@@ -17,11 +17,13 @@ In Railway dashboard, add the following environment variables:
 MTS_CLIENT_ID=your_client_id_here
 MTS_CLIENT_SECRET=your_client_secret_here
 MTS_BOOKMAKER_ID=your_bookmaker_id_here # Optional if UOF_ACCESS_TOKEN is provided
-UOF_ACCESS_TOKEN=your_uof_token_here # Optional: Auto-fetch Bookmaker ID
+MTS_VIRTUAL_HOST=mts-api-ci.betradar.com # Optional if UOF_ACCESS_TOKEN is provided
+UOF_API_BASE_URL=https://global.api.betradar.com # Optional: Base URL for whoami.xml (e.g., https://stgapi.betradar.com)
+UOF_ACCESS_TOKEN=your_uof_token_here # Optional: Auto-fetch Bookmaker ID and VirtualHost
 MTS_PRODUCTION=false
 ```
 
-**Note**: You can either provide `MTS_BOOKMAKER_ID` directly or `UOF_ACCESS_TOKEN` to auto-fetch it.
+**Note**: You can either provide `MTS_BOOKMAKER_ID` and `MTS_VIRTUAL_HOST` directly, or provide `UOF_ACCESS_TOKEN` and `UOF_API_BASE_URL` to auto-fetch them.
 
 **Note**: Railway automatically sets the `PORT` variable, no need to configure it.
 
