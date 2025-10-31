@@ -27,7 +27,7 @@ func main() {
 	// Auto-fetch Bookmaker ID if not provided but AccessToken is available
 	if cfg.BookmakerID == "" && cfg.AccessToken != "" {
 		log.Println("Bookmaker ID not provided, fetching from whoami.xml...")
-			bookmakerID, _, err := client.FetchBookmakerInfo(cfg.AccessToken, cfg.Production)
+			bookmakerID, _, err := client.FetchBookmakerInfo(cfg.AccessToken, cfg.UOFAPIBaseURL)
 		if err != nil {
 			log.Fatalf("Failed to fetch Bookmaker ID: %v", err)
 		}
