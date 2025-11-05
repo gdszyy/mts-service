@@ -23,7 +23,7 @@ func main() {
 		log.Printf("Failed to load config: %v. Attempting to switch to betting-system...", err)
 		
 		// 硬编码启动 betting-system
-		cmd := exec.Command("go", "run", "betting-system/cmd/server/main.go")
+		cmd := exec.Command("./betting-system")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		
