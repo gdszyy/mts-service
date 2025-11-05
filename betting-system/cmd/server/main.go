@@ -12,18 +12,8 @@ import (
 func main() {
 	log.Println("Starting Betting System...")
 
-	// 加载数据库配置
-	dbConfig := &database.Config{
-		Host:     getEnv("DB_HOST", "localhost"),
-		Port:     getEnv("DB_PORT", "5432"),
-		User:     getEnv("DB_USER", "postgres"),
-		Password: getEnv("DB_PASSWORD", "postgres"),
-		DBName:   getEnv("DB_NAME", "betting_system"),
-		SSLMode:  getEnv("DB_SSLMODE", "disable"),
-	}
-
-	// 连接数据库
-	if err := database.Connect(dbConfig); err != nil {
+		// 连接数据库
+		if err := database.Connect(); err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	log.Println("Database connected")
@@ -55,9 +45,12 @@ func main() {
 }
 
 func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
+		if value := os.Getenv(key); value != "" {
+			return value
+		}
+		return defaultValue
 	}
-	return defaultValue
-}
+
+	// 移除未使用的 dbConfig 变量和 getEnv 调用
+	// 数据库连接逻辑已移至 database.Connect()
 

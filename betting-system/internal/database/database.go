@@ -3,6 +3,9 @@ package database
 import (
 	"fmt"
 	"log"
+	"net/url"
+	"os"
+	"strings"
 
 	"github.com/gdsZyy/betting-system/internal/models"
 	"gorm.io/driver/postgres"
@@ -14,21 +17,92 @@ import (
 var DB *gorm.DB
 
 // Config 数据库配置
-type Config struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
-}
+	type Config struct {
+		Host     string
+		Port     string
+		User     string
+		Password string
+		DBName   string
+		SSLMode  string
+	}
 
-// Connect 连接数据库
-func Connect(cfg *Config) error {
-	dsn := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName, cfg.SSLMode,
-	)
+	// Connect 连接数据库
+	func Connect() error {
+		dsn := getDSN()
+
+		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Info),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to connect to database: %w", err)
+		}
+
+		DB = db
+		log.Println("Database connection established")
+
+		return nil
+	}
+
+	// getDSN 获取数据库连接字符串
+	func getDSN() string {
+		if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
+			return parseDatabaseURL(dbURL)
+		}
+
+		// Fallback to individual environment variables
+		host := os.Getenv("DB_HOST")
+		port := os.Getenv("DB_PORT")
+		user := os.Getenv("DB_USER")
+		password := os.Getenv("DB_PASSWORD")
+		dbname := os.Getenv("DB_NAME")
+		sslmode := os.Getenv("DB_SSLMODE")
+
+		if host == "" || port == "" || user == "" || password == "" || dbname == "" {
+			log.Fatal("DATABASE_URL or all individual DB_* environment variables must be set")
+		}
+
+		return fmt.Sprintf(
+			"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+			host, port, user, password, dbname, sslmode,
+		)
+	}
+
+	// parseDatabaseURL parses a standard PostgreSQL connection URL into a DSN string
+	func parseDatabaseURL(dbURL string) string {
+		u, err := url.Parse(dbURL)
+		if err != nil {
+			log.Fatalf("Failed to parse DATABASE_URL: %v", err)
+		}
+
+		// Replace postgres:// with the standard DSN format
+		// GORM's postgres driver expects a DSN string, not a URL
+		// Example: postgres://user:pass@host:port/dbname?sslmode=disable
+		// We need: host=host port=port user=user password=pass dbname=dbname sslmode=disable
+		
+		host := u.Hostname()
+		port := u.Port()
+		user := u.User.Username()
+		password, _ := u.User.Password()
+		dbname := strings.TrimPrefix(u.Path, "/")
+		
+		// Extract sslmode from query parameters, default to disable
+		sslmode := "disable"
+		if u.Query().Get("sslmode") != "" {
+			sslmode = u.Query().Get("sslmode")
+		}
+
+		return fmt.Sprintf(
+			"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+			host, port, user, password, dbname, sslmode,
+		)
+	}
+
+	// Connect 连接数据库
+	func Connect(cfg *Config) error {
+		dsn := fmt.Sprintf(
+			"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+			cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName, cfg.SSLMode,
+		)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
