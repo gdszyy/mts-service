@@ -32,8 +32,18 @@ type Event struct {
 	AwayScore  *int           `json:"away_score,omitempty"`
 	CreatedAt  time.Time      `json:"created_at"`
 	UpdatedAt  time.Time      `json:"updated_at"`
-	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
-}
+		DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
+	}
+
+	// IsLive 判断赛事是否正在进行
+	func (e *Event) IsLive() bool {
+		return e.Status == "live"
+	}
+
+	// IsEnded 判断赛事是否已结束
+	func (e *Event) IsEnded() bool {
+		return e.Status == "finished" || e.Status == "cancelled"
+	}
 
 // Market 盘口模型
 type Market struct {
