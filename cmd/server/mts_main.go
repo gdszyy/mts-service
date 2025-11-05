@@ -24,23 +24,23 @@ func main() {
 
 	log.Printf("Configuration loaded: Production=%v, Port=%s", cfg.Production, cfg.Port)
 
-		// Auto-fetch Bookmaker ID if not provided and AccessToken is available
-		if cfg.BookmakerID == "" && cfg.AccessToken != "" {
-			log.Println("Bookmaker ID not provided, attempting to fetch from whoami.xml...")
-				bookmakerID, _, err := client.FetchBookmakerInfo(cfg.AccessToken, cfg.UOFAPIBaseURL)
-			if err != nil {
-				log.Printf("Warning: Failed to fetch Bookmaker Info from whoami.xml: %v. Proceeding without auto-configuration.", err)
-			} else {
-				cfg.BookmakerID = bookmakerID
-				log.Printf("Bookmaker ID fetched successfully: %s", bookmakerID)
-			}
+	// Auto-fetch Bookmaker ID if not provided and AccessToken is available
+	if cfg.BookmakerID == "" && cfg.AccessToken != "" {
+		log.Println("Bookmaker ID not provided, attempting to fetch from whoami.xml...")
+		bookmakerID, _, err := client.FetchBookmakerInfo(cfg.AccessToken, cfg.UOFAPIBaseURL)
+		if err != nil {
+			log.Printf("Warning: Failed to fetch Bookmaker Info from whoami.xml: %v. Proceeding without auto-configuration.", err)
+		} else {
+			cfg.BookmakerID = bookmakerID
+			log.Printf("Bookmaker ID fetched successfully: %s", bookmakerID)
 		}
+	}
 
-		// Check if BookmakerID is still empty after auto-fetch attempt
-		if cfg.BookmakerID == "" {
-			log.Println("Bookmaker ID is still empty. MTS service will not start.")
-			return
-		}
+	// Check if BookmakerID is still empty after auto-fetch attempt
+	if cfg.BookmakerID == "" {
+		log.Println("Bookmaker ID is still empty. MTS service will not start.")
+		return
+	}
 
 	// Create MTS service
 	mtsService := service.NewMTSService(cfg)
@@ -100,4 +100,3 @@ func enableCORS(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
