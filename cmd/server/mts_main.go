@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os/exec"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,7 +20,19 @@ func main() {
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		log.Printf("Failed to load config: %v. Attempting to switch to betting-system...", err)
+		
+		// 硬编码启动 betting-system
+		cmd := exec.Command("go", "run", "betting-system/cmd/server/main.go")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		
+		if runErr := cmd.Run(); runErr != nil {
+			log.Fatalf("Failed to start betting-system: %v", runErr)
+		}
+		
+		log.Println("Betting System exited. Shutting down MTS Service...")
+		return
 	}
 
 	log.Printf("Configuration loaded: Production=%v, Port=%s", cfg.Production, cfg.Port)
