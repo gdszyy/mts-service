@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"log"
@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
+func StartBettingSystem() {
 	log.Println("Starting Betting System...")
 
 		// 连接数据库
