@@ -15,8 +15,12 @@ type Config struct {
 	// MTS
 	ClientID     string
 	ClientSecret string
-	BookmakerID  string
-	VirtualHost  string
+		BookmakerID  string
+		LimitID      string
+		OperatorID   string
+		VirtualHost  string
+		WSURL        string
+		WSAudience   string
 	AccessToken  string // Optional: UOF Access Token for whoami.xml
 	Production   bool
 
@@ -29,9 +33,13 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Port:         getEnv("PORT", "8080"),
 			ClientID:     getEnv("MTS_CLIENT_ID", ""),
-			ClientSecret: getEnv("MTS_CLIENT_SECRET", ""),
-			BookmakerID:  getEnv("MTS_BOOKMAKER_ID", ""),
-			VirtualHost:  getEnv("MTS_VIRTUAL_HOST", ""),
+				ClientSecret: getEnv("MTS_CLIENT_SECRET", ""),
+				BookmakerID:  getEnv("MTS_BOOKMAKER_ID", ""),
+				LimitID:      getEnv("MTS_LIMIT_ID", ""),
+				OperatorID:   getEnv("MTS_OPERATOR_ID", ""),
+				VirtualHost:  getEnv("MTS_VIRTUAL_HOST", ""),
+				WSURL:        getEnv("MTS_WS_URL", "wss://wss.dataplane-nonprod.sportradar.dev"),
+				WSAudience:   getEnv("MTS_WS_AUDIENCE", "mbs-dp-non-prod-wss"),
 			AccessToken:  getEnv("UOF_ACCESS_TOKEN", ""),
 		Production:   getEnvBool("MTS_PRODUCTION", false),
 				AuthURL:      getEnv("MTS_AUTH_URL", "https://auth.sportradar.com/oauth/token"),

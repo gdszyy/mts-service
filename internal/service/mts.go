@@ -18,11 +18,6 @@ import (
 )
 
 const (
-	IntegrationWSURL    = "wss://wss.dataplane-nonprod.sportradar.dev:443"
-	ProductionWSURL     = "wss://wss.dataplane.sportradar.com:443"
-	IntegrationAudience = "mbs-dp-non-prod-wss"
-	ProductionAudience  = "mbs-dp-production-wss"
-
 	WriteWait      = 10 * time.Second
 	PongWait       = 60 * time.Second
 	PingPeriod     = 54 * time.Second
@@ -38,8 +33,8 @@ type TokenResponse struct {
 
 type MTSService struct {
 	cfg          *config.Config
-	wsURL        string
-	audience     string
+		wsURL        string
+		wsAudience   string
 	conn         *websocket.Conn
 	token        *TokenResponse
 	tokenExpiry  time.Time
@@ -54,26 +49,27 @@ type MTSService struct {
 	httpClient   *http.Client
 }
 
-func NewMTSService(cfg *config.Config) *MTSService {
-// 修正 WebSocket URL 构造逻辑，直接使用 VirtualHost，因为 VirtualHost 已经包含了完整的路径
-		wsURL := fmt.Sprintf("wss://%s", cfg.VirtualHost)
-	audience := IntegrationAudience
-	if cfg.Production {
-		audience = ProductionAudience
-	}
+	func NewMTSService(cfg *config.Config) *MTSService {
+		wsURL := cfg.WSURL
+		wsAudience := cfg.WSAudience
+		if cfg.Production {
+			// 生产环境使用配置中的 VirtualHost 作为 URL，并使用生产环境的 Audience
+			wsURL = fmt.Sprintf("wss://%s", cfg.VirtualHost)
+			wsAudience = "mbs-dp-production-wss"
+		}
 
-	ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(context.Background())
 
-	return &MTSService{
-		cfg:        cfg,
-		wsURL:      wsURL,
-		audience:   audience,
-		responses:  make(map[string]chan *models.TicketResponse),
-		ctx:        ctx,
-		cancel:     cancel,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		return &MTSService{
+			cfg:        cfg,
+			wsURL:      wsURL,
+			wsAudience: wsAudience,
+			responses:  make(map[string]chan *models.TicketResponse),
+			ctx:        ctx,
+			cancel:     cancel,
+			httpClient: &http.Client{Timeout: 30 * time.Second},
+		}
 	}
-}
 
 func (s *MTSService) Start() error {
 	if err := s.connect(); err != nil {
@@ -121,8 +117,8 @@ func (s *MTSService) refreshToken() (string, error) {
 	data := url.Values{}
 	data.Set("grant_type", "client_credentials")
 	data.Set("client_id", s.cfg.ClientID)
-	data.Set("client_secret", s.cfg.ClientSecret)
-	data.Set("audience", s.audience)
+		data.Set("client_secret", s.cfg.ClientSecret)
+		data.Set("audience", s.wsAudience)
 
 	req, err := http.NewRequest("POST", s.cfg.AuthURL, bytes.NewBufferString(data.Encode()))
 	if err != nil {
@@ -187,9 +183,39 @@ func (s *MTSService) connect() error {
 	go s.readPump()
 	go s.pingPump()
 
-	log.Println("Connected to MTS WebSocket")
-	return nil
-}
+		log.Println("Connected to MTS WebSocket")
+
+		// 发送初始化订阅消息
+		if err := s.sendInitializationMessage(); err != nil {
+			return fmt.Errorf("failed to send initialization message: %w", err)
+		}
+
+		return nil
+	}
+
+	// sendInitializationMessage 发送 WebSocket 连接后的初始化订阅消息
+	func (s *MTSService) sendInitializationMessage() error {
+		// 构造初始化消息
+		initMsg := map[string]interface{}{
+			"type":          "subscribe",
+			"bookmaker_id":  s.cfg.BookmakerID,
+			"limit_id":      s.cfg.LimitID,
+			"operatorId":    s.cfg.OperatorID,
+			"correlationId": fmt.Sprintf("init-%d", time.Now().UnixNano()), // 使用唯一 ID
+			"timestampUtc":  time.Now().UnixMilli(),
+			"operation":     "initialization", // 假设初始化操作名为 initialization
+			"version":       "3.0",
+		}
+
+		// 检查 BookmakerID, LimitID, OperatorID 是否已设置
+		if initMsg["bookmaker_id"] == "" || initMsg["limit_id"] == "" || initMsg["operatorId"] == "" {
+			log.Printf("Warning: BookmakerID (%s), LimitID (%s), or OperatorID (%s) is missing. Initialization message may fail.", s.cfg.BookmakerID, s.cfg.LimitID, s.cfg.OperatorID)
+		}
+
+		log.Printf("Sending initialization message: %+v", initMsg)
+
+		return s.sendMessage(initMsg)
+	}
 
 func (s *MTSService) readPump() {
 	defer func() {
