@@ -133,7 +133,8 @@ func (s *MTSService) refreshToken() (string, error) {
 		return "", fmt.Errorf("failed to create auth request: %w", err)
 	}
 
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("User-Agent", "Sportradar-MTS-Client/1.0 (Go)")
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
