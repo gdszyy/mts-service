@@ -2,8 +2,6 @@ package main
 
 import (
 	"log"
-"
-
 	"net/http"
 	"os"
 	"os/signal"
@@ -21,7 +19,7 @@ func main() {
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
-			log.Fatalf("Failed to load config: %v", err)
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
 	log.Printf("Configuration loaded: Production=%v, Port=%s", cfg.Production, cfg.Port)
@@ -102,3 +100,4 @@ func enableCORS(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
