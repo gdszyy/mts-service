@@ -152,7 +152,7 @@ func (s *MTSService) refreshToken() (string, error) {
 	}
 
 	s.token = &tokenResp
-	s.tokenExpiry = time.Now().Add(time.Duration(tokenResp.ExpiresIn-300) * time.Second)
+		s.tokenExpiry = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second).Add(-30 * time.Second) // 提前 30 秒过期，确保刷新
 
 	return tokenResp.AccessToken, nil
 }

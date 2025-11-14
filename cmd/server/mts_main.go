@@ -2,8 +2,8 @@ package main
 
 import (
 	"log"
-	"os/exec"
-	bettingSystem "github.com/gdsZyy/mts-service/betting-system/cmd/server"
+"
+
 	"net/http"
 	"os"
 	"os/signal"
@@ -21,13 +21,7 @@ func main() {
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
-		log.Printf("Failed to load config: %v. Attempting to switch to betting-system...", err)
-		
-// 硬编码启动 betting-system
-			log.Println("Starting Betting System (in-process)...")
-			bettingSystem.StartBettingSystem()
-			log.Println("Betting System exited. Shutting down MTS Service...")
-			return
+			log.Fatalf("Failed to load config: %v", err)
 	}
 
 	log.Printf("Configuration loaded: Production=%v, Port=%s", cfg.Production, cfg.Port)

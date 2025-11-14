@@ -7,4 +7,4 @@ require (
 	github.com/gorilla/websocket v1.5.3
 )
 
-replace github.com/gdsZyy/mts-service/betting-system => ./betting-system
+
