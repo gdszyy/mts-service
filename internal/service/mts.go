@@ -55,12 +55,8 @@ type MTSService struct {
 }
 
 func NewMTSService(cfg *config.Config) *MTSService {
-	wsURL := fmt.Sprintf("wss://%s/api/v1/mts", cfg.VirtualHost)
-	if cfg.Production {
-		wsURL = fmt.Sprintf("wss://%s/api/v1/mts", cfg.VirtualHost)
-	} else {
-		wsURL = fmt.Sprintf("wss://%s/api/v1/mts", cfg.VirtualHost)
-	}
+// 修正 WebSocket URL 构造逻辑，直接使用 VirtualHost，因为 VirtualHost 已经包含了完整的路径
+		wsURL := fmt.Sprintf("wss://%s", cfg.VirtualHost)
 	audience := IntegrationAudience
 	if cfg.Production {
 		audience = ProductionAudience
