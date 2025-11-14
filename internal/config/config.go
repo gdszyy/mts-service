@@ -28,21 +28,29 @@ type Config struct {
 func Load() (*Config, error) {
 	cfg := &Config{
 		Port:         getEnv("PORT", "8080"),
-			ClientID:     getEnv("MTS_CLIENT_ID", "rOCi1mVU6UhH7I2lu3t1ME4dyfkiPFVk"),
-			ClientSecret: getEnv("MTS_CLIENT_SECRET", "IWGVLxyH9XcoJpZNEDNjCSFSvDAp49c_7kOi_iCuxQzitOsMfY8X4HMmw3Dcydcr"),
-			BookmakerID:  getEnv("MTS_BOOKMAKER_ID", "45426"),
-			VirtualHost:  getEnv("MTS_VIRTUAL_HOST", "mbs-dp-non-prod-wss"),
+			ClientID:     getEnv("MTS_CLIENT_ID", ""),
+			ClientSecret: getEnv("MTS_CLIENT_SECRET", ""),
+			BookmakerID:  getEnv("MTS_BOOKMAKER_ID", ""),
+			VirtualHost:  getEnv("MTS_VIRTUAL_HOST", ""),
 			AccessToken:  getEnv("UOF_ACCESS_TOKEN", ""),
 		Production:   getEnvBool("MTS_PRODUCTION", false),
 				AuthURL:      "", // Will be set after Production is determined
-			UOFAPIBaseURL: getEnv("UOF_API_BASE_URL", "https://wss.dataplane-nonprod.sportradar.dev"),
+			UOFAPIBaseURL: getEnv("UOF_API_BASE_URL", "https://global.api.betradar.com"),
 		}
 
 		// Set AuthURL after Production is determined
 		cfg.AuthURL = getAuthURL(cfg.Production)
 
-		// If MTS_CLIENT_ID is not set, we use the hardcoded values for testing.
-		// We skip the required checks here since we are using hardcoded values.
+		if cfg.ClientID == "" {
+			return nil, fmt.Errorf("MTS_CLIENT_ID is required")
+		}
+		if cfg.ClientSecret == "" {
+			return nil, fmt.Errorf("MTS_CLIENT_SECRET is required")
+		}
+		// BookmakerID is optional if AccessToken is provided (will be fetched from whoami.xml)
+		if cfg.BookmakerID == "" && cfg.AccessToken == "" {
+			return nil, fmt.Errorf("either MTS_BOOKMAKER_ID or UOF_ACCESS_TOKEN is required")
+		}
 
 	// If AccessToken is provided, try to fetch Bookmaker ID and VirtualHost
 	if cfg.AccessToken != "" && (cfg.BookmakerID == "" || cfg.VirtualHost == "") {
