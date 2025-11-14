@@ -31,7 +31,7 @@ func Load() (*Config, error) {
 			ClientID:     getEnv("MTS_CLIENT_ID", ""),
 			ClientSecret: getEnv("MTS_CLIENT_SECRET", ""),
 			BookmakerID:  getEnv("MTS_BOOKMAKER_ID", ""),
-			VirtualHost:  getEnv("MTS_VIRTUAL_HOST", ""),
+			VirtualHost:  getEnv("MTS_VIRTUAL_HOST", "wss.dataplane-nonprod.sportradar.dev"),
 			AccessToken:  getEnv("UOF_ACCESS_TOKEN", ""),
 		Production:   getEnvBool("MTS_PRODUCTION", false),
 				AuthURL:      getEnv("MTS_AUTH_URL", "https://auth.sportradar.com/oauth/token"),
