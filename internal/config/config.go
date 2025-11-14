@@ -34,12 +34,11 @@ func Load() (*Config, error) {
 			VirtualHost:  getEnv("MTS_VIRTUAL_HOST", ""),
 			AccessToken:  getEnv("UOF_ACCESS_TOKEN", ""),
 		Production:   getEnvBool("MTS_PRODUCTION", false),
-				AuthURL:      "", // Will be set after Production is determined
+				AuthURL:      getEnv("MTS_AUTH_URL", "https://auth.sportradar.com/oauth/token"),
 			UOFAPIBaseURL: getEnv("UOF_API_BASE_URL", "https://global.api.betradar.com"),
 		}
 
-		// Set AuthURL after Production is determined
-		cfg.AuthURL = getAuthURL(cfg.Production)
+
 
 		if cfg.ClientID == "" {
 			return nil, fmt.Errorf("MTS_CLIENT_ID is required")
@@ -86,12 +85,7 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-func getAuthURL(production bool) string {
-	if production {
-		return "https://mts-api.betradar.com/api/v1/oauth/token"
-	}
-	return "https://mts-api-ci.betradar.com/api/v1/oauth/token"
-}
+
 
 func getEnvBool(key string, defaultValue bool) bool {
 	if value := os.Getenv(key); value != "" {
