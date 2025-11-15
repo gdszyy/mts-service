@@ -269,16 +269,30 @@ func (s *MTSService) pingPump() {
 	}
 }
 
-func (s *MTSService) handleMessage(message []byte) {
-	var response models.TicketResponse
-	if err := json.Unmarshal(message, &response); err != nil {
-		log.Printf("Failed to unmarshal response: %v", err)
-		return
-	}
+	func (s *MTSService) handleMessage(message []byte) {
+		var response models.TicketResponse
+		if err := json.Unmarshal(message, &response); err != nil {
+			log.Printf("Failed to unmarshal response: %v. Message: %s", err, string(message))
+			return
+		}
 
-	go s.sendAcknowledgement(&response)
+		// 检查是否是 MTS 错误响应
+		if response.Content.Type == "error-reply" {
+			// 尝试解析更详细的错误信息
+			var errorResponse struct {
+				Content models.ErrorReplyContent `json:"content"`
+			}
+			if err := json.Unmarshal(message, &errorResponse); err == nil {
+				log.Printf("MTS Error Reply received (CorrelationID: %s): Code=%d, Message=%s", response.CorrelationID, errorResponse.Content.Code, errorResponse.Content.Message)
+			} else {
+				log.Printf("MTS Error Reply received, but failed to parse details. Message: %s", string(message))
+			}
+			// 即使是错误，也需要将响应传递给等待的通道，以便 SendTicket 可以超时或返回错误
+		}
 
-	s.responseMu.RLock()
+		go s.sendAcknowledgement(&response)
+
+		s.responseMu.RLock()
 	ch, ok := s.responses[response.CorrelationID]
 	s.responseMu.RUnlock()
 
@@ -332,10 +346,19 @@ func (s *MTSService) SendTicket(ticket *models.TicketRequest) (*models.TicketRes
 	}
 
 	select {
-	case response := <-responseCh:
-		return response, nil
-	case <-time.After(10 * time.Second):
-		return nil, fmt.Errorf("timeout waiting for ticket response")
+		case response := <-responseCh:
+			// 检查是否是 MTS 错误响应
+			if response.Content.Type == "error-reply" {
+				// 尝试解析更详细的错误信息
+				var errorContent models.ErrorReplyContent
+					// 由于我们在 handleMessage 中已经打印了详细日志，这里直接返回一个通用错误，并提示用户检查日志
+					// 更好的做法是在 handleMessage 中将 ErrorReplyContent 结构体放入 TicketResponse 中
+					// 但为了避免对 TicketResponse 结构体进行大规模修改，我们先采用日志+通用错误的方式
+					return nil, fmt.Errorf("MTS returned an error reply (version %s). Check service logs for details. CorrelationID: %s", response.Version, response.CorrelationID)
+			}
+			return response, nil
+		case <-time.After(10 * time.Second):
+			return nil, fmt.Errorf("timeout waiting for ticket response")
 	case <-s.ctx.Done():
 		return nil, fmt.Errorf("service closed")
 	}

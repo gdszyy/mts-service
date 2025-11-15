@@ -111,6 +111,13 @@ type TicketAck struct {
 	Version       string           `json:"version"`
 }
 
+// ErrorReplyContent represents the content of an error reply
+type ErrorReplyContent struct {
+	Type    string `json:"type"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 // TicketAckContent represents the content of a ticket acknowledgement
 type TicketAckContent struct {
 	Type            string `json:"type"`
