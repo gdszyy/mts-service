@@ -205,6 +205,7 @@ func (s *MTSService) sendInitializationMessage() error {
 
 	// 构造初始化消息
 	// 根据最新的 Schema 错误，添加 operatorId 到 Envelope，并添加 ticket 和 betValidations 到 Content
+	// 重新检查文档发现 ticket-placement-inform 消息的 Content 应该包含 ticket 和 betValidations 字段
 	initMsg := map[string]interface{}{
 		"operatorId":    operatorID, // Added operatorId
 		"correlationId": fmt.Sprintf("init-%d", time.Now().UnixNano()), // 使用唯一 ID
