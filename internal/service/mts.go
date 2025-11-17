@@ -197,20 +197,24 @@ func (s *MTSService) connect() error {
 	func (s *MTSService) sendInitializationMessage() error {
 		// 构造初始化消息
 		initMsg := map[string]interface{}{
-			"type":          "subscribe",
-			"bookmaker_id":  s.cfg.BookmakerID,
-			"limit_id":      s.cfg.LimitID,
-			"operatorId":    s.cfg.OperatorID,
-			"correlationId": fmt.Sprintf("init-%d", time.Now().UnixNano()), // 使用唯一 ID
-			"timestampUtc":  time.Now().UnixMilli(),
-			"operation":     "initialization", // 假设初始化操作名为 initialization
-			"version":       "3.0",
+				"type":          "subscribe",
+				"correlationId": fmt.Sprintf("init-%d", time.Now().UnixNano()), // 使用唯一 ID
+				"timestampUtc":  time.Now().UnixMilli(),
+				"operation":     "ticket-placement-inform", // 使用一个有效的 operation
+				"version":       "3.0",
+				"content": map[string]interface{}{
+					"type": "subscribe",
+					"bookmaker_id": s.cfg.BookmakerID,
+					"limit_id": s.cfg.LimitID,
+					"operatorId": s.cfg.OperatorID,
+				},
 		}
 
-		// 检查 BookmakerID, LimitID, OperatorID 是否已设置
-		if initMsg["bookmaker_id"] == "" || initMsg["limit_id"] == "" || initMsg["operatorId"] == "" {
-			log.Printf("Warning: BookmakerID (%s), LimitID (%s), or OperatorID (%s) is missing. Initialization message may fail.", s.cfg.BookmakerID, s.cfg.LimitID, s.cfg.OperatorID)
-		}
+			// 检查 BookmakerID, LimitID, OperatorID 是否已设置
+			content := initMsg["content"].(map[string]interface{})
+			if content["bookmaker_id"] == "" || content["limit_id"] == "" || content["operatorId"] == "" {
+				log.Printf("Warning: BookmakerID (%s), LimitID (%s), or OperatorID (%s) is missing. Initialization message may fail.", s.cfg.BookmakerID, s.cfg.LimitID, s.cfg.OperatorID)
+			}
 
 		log.Printf("Sending initialization message: %+v", initMsg)
 
