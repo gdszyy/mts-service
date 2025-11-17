@@ -278,23 +278,24 @@ func (s *MTSService) pingPump() {
 			return
 		}
 
-		// 检查是否是 MTS 错误响应
-		if response.Content.Type == "error-reply" {
-			// 尝试解析更详细的错误信息
-			var errorResponse struct {
-				Content models.ErrorReplyContent `json:"content"`
-			}
-			if err := json.Unmarshal(message, &errorResponse); err == nil {
-				log.Printf("MTS Error Reply received (CorrelationID: %s): Code=%d, Message=%s", response.CorrelationID, errorResponse.Content.Code, errorResponse.Content.Message)
+			// 检查是否是 MTS 错误响应
+			if response.Content.Type == "error-reply" {
+				// 尝试解析更详细的错误信息
+				var errorResponse struct {
+					Content models.ErrorReplyContent `json:"content"`
+				}
+				if err := json.Unmarshal(message, &errorResponse); err == nil {
+					log.Printf("MTS Error Reply received (CorrelationID: %s): Code=%d, Message=%s", response.CorrelationID, errorResponse.Content.Code, errorResponse.Content.Message)
+				} else {
+					log.Printf("MTS Error Reply received, but failed to parse details. Message: %s", string(message))
+				}
+				// 错误回复不需要发送 ACK，直接将响应传递给等待的通道
 			} else {
-				log.Printf("MTS Error Reply received, but failed to parse details. Message: %s", string(message))
+				// 只有非错误回复才需要发送 ACK
+				go s.sendAcknowledgement(&response)
 			}
-			// 即使是错误，也需要将响应传递给等待的通道，以便 SendTicket 可以超时或返回错误
-		}
 
-		go s.sendAcknowledgement(&response)
-
-		s.responseMu.RLock()
+			s.responseMu.RLock()
 	ch, ok := s.responses[response.CorrelationID]
 	s.responseMu.RUnlock()
 
