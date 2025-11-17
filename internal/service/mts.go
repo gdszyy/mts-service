@@ -252,7 +252,14 @@ func (s *MTSService) sendInitializationMessage() error {
 							},
 						},
 					},
-				"betValidations": []interface{}{}, // Empty array of betValidations
+					"betValidations": []interface{}{ // Must have at least 1 item
+						map[string]interface{}{
+							"betId":   fmt.Sprintf("init-bet-%d", time.Now().UnixNano()),
+							"code":    1100,
+							"message": "Prevalidated, OK",
+							"rejected": false,
+						},
+					},
 			},
 	}
 
