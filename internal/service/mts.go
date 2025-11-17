@@ -204,6 +204,8 @@ func (s *MTSService) connect() error {
 					"version":       "3.0",
 					"content": map[string]interface{}{
 						"type": "ticket-inform", // 必须是 ticket-inform
+						"ticketId": fmt.Sprintf("init-ticket-%d", time.Now().UnixNano()), // 添加 ticketId
+						"ticketSignature": "initial-signature", // 添加 ticketSignature 占位符
 					},
 			}
 
