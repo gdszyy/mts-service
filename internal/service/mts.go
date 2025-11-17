@@ -212,12 +212,16 @@ func (s *MTSService) sendInitializationMessage() error {
 		"timestampUtc":  time.Now().UnixMilli(),
 		"operation":     "ticket-placement-inform", // 必须是 ticket-placement-inform
 		"version": "3.0",
-		"content": map[string]interface{}{
-			"type": "ticket-inform", // 必须是 ticket-inform
-			// The following fields are required for ticket-inform content, even if empty
-			"ticket":         map[string]interface{}{}, // Empty ticket object
-			"betValidations": []interface{}{},          // Empty array of betValidations
-		},
+			"content": map[string]interface{}{
+				"type": "ticket-inform", // 必须是 ticket-inform
+				// The following fields are required for ticket-inform content, even if empty
+				"ticket": map[string]interface{}{
+					"ticketId": fmt.Sprintf("init-ticket-%d", time.Now().UnixNano()), // Required non-empty string
+					"context":  map[string]interface{}{},                            // Required object
+					"bets":     []interface{}{},                                      // Required array
+				},
+				"betValidations": []interface{}{}, // Empty array of betValidations
+			},
 	}
 
 	log.Printf("Sending initialization message: %+v", initMsg)
