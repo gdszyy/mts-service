@@ -307,35 +307,44 @@ func (s *MTSService) pingPump() {
 	}
 }
 
-func (s *MTSService) sendAcknowledgement(response *models.TicketResponse) error {
-	ack := models.TicketAck{
-		Operation:     "ticket-placement-ack",
-		CorrelationID: response.CorrelationID,
-		TimestampUTC:  time.Now().UnixMilli(),
-		Version:       "3.0",
-		Content: models.TicketAckContent{
-			Type:            "ticket-ack",
-			TicketID:        response.Content.TicketID,
-				Acknowledged:    true, // 默认发送确认成功
-// 签名字段将在下面根据 operation 动态设置
+	func (s *MTSService) sendAcknowledgement(response *models.TicketResponse) error {
+		// Operator ID is mandatory for ACK messages
+		operatorID := s.cfg.OperatorID
+		if operatorID == 0 {
+			log.Println("Warning: OperatorID is not set in config. Using default 9985 for ACK.")
+			operatorID = 9985 // Fallback or a known test ID
+		}
 
-		},
+		ack := models.TicketAck{
+			OperatorID:    operatorID, // Added operatorId
+			Operation:     "ticket-placement-ack",
+			CorrelationID: response.CorrelationID,
+			TimestampUTC:  time.Now().UnixMilli(),
+			Version:       "3.0",
+			Content: models.TicketAckContent{
+				Type:            "ticket-ack",
+				TicketID:        response.Content.TicketID,
+					Acknowledged:    true, // 默认发送确认成功
+	// 签名字段将在下面根据 operation 动态设置
+
+			},
+		}
+
+			// 根据 operation 设置正确的签名
+		switch ack.Operation {
+		case "ticket-placement-ack":
+			// The response.Content.Signature contains the required ticketSignature from MTS
+			ack.Content.TicketSignature = response.Content.Signature
+		case "ticket-cancel-ack":
+			ack.Content.CancellationSignature = response.Content.Signature
+		case "ticket-cashout-ack":
+			ack.Content.CashoutSignature = response.Content.Signature
+		case "ticket-ext-settlement-ack":
+			ack.Content.SettlementSignature = response.Content.Signature
+		}
+
+		return s.sendMessage(&ack)
 	}
-
-		// 根据 operation 设置正确的签名
-	switch ack.Operation {
-	case "ticket-placement-ack":
-		ack.Content.TicketSignature = response.Content.Signature
-	case "ticket-cancel-ack":
-		ack.Content.CancellationSignature = response.Content.Signature
-	case "ticket-cashout-ack":
-		ack.Content.CashoutSignature = response.Content.Signature
-	case "ticket-ext-settlement-ack":
-		ack.Content.SettlementSignature = response.Content.Signature
-	}
-
-	return s.sendMessage(&ack)
-}
 
 func (s *MTSService) SendTicket(ticket *models.TicketRequest) (*models.TicketResponse, error) {
 	s.connMu.RLock()

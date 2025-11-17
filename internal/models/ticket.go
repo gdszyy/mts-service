@@ -106,6 +106,7 @@ type SelectionDetail struct {
 
 // TicketAck represents a ticket acknowledgement message
 type TicketAck struct {
+	OperatorID    int64            `json:"operatorId"` // Added operatorId
 	Operation     string           `json:"operation"`
 	Content       TicketAckContent `json:"content"`
 	CorrelationID string           `json:"correlationId"`
