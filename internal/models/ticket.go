@@ -120,8 +120,17 @@ type ErrorReplyContent struct {
 
 // TicketAckContent represents the content of a ticket acknowledgement
 type TicketAckContent struct {
-	Type            string `json:"type"`
-	TicketID        string `json:"ticketId"`
-	TicketSignature string `json:"ticketSignature"`
+	Type                  string `json:"type"`
+	TicketID              string `json:"ticketId"`
+	Acknowledged          bool   `json:"acknowledged"`
+	TicketSignature       string `json:"ticketSignature,omitempty"`
+	CancellationSignature string `json:"cancellationSignature,omitempty"`
+	CashoutSignature      string `json:"cashoutSignature,omitempty"`
+	SettlementSignature   string `json:"settlementSignature,omitempty"`
+}e,omitempty"`
+	CancellationSignature string `json:"cancellationSignature,omitempty"`
+	CashoutSignature      string `json:"cashoutSignature,omitempty"`
+	SettlementSignature   string `json:"settlementSignature,omitempty"`
+	Acknowledged          bool   `json:"acknowledged"`
 }
 

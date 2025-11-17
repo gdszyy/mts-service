@@ -201,11 +201,11 @@ func (s *MTSService) connect() error {
 					"correlationId": fmt.Sprintf("init-%d", time.Now().UnixNano()), // 使用唯一 ID
 					"timestampUtc":  time.Now().UnixMilli(),
 					"operation":     "ticket-placement-inform", // 必须是 ticket-placement-inform
-					"version":       "3.0",
+					"version": "3.0",
 					"content": map[string]interface{}{
 						"type": "ticket-inform", // 必须是 ticket-inform
 						"ticketId": fmt.Sprintf("init-ticket-%d", time.Now().UnixNano()), // 添加 ticketId
-						"ticketSignature": "initial-signature", // 添加 ticketSignature 占位符
+						// "ticketSignature": "initial-signature", // 移除占位符，因为这是请求，不需要签名
 					},
 			}
 
@@ -311,12 +311,26 @@ func (s *MTSService) sendAcknowledgement(response *models.TicketResponse) error 
 		Operation:     "ticket-placement-ack",
 		CorrelationID: response.CorrelationID,
 		TimestampUTC:  time.Now().UnixMilli(),
-		Version:       "2.4",
+		Version:       "3.0",
 		Content: models.TicketAckContent{
 			Type:            "ticket-ack",
 			TicketID:        response.Content.TicketID,
-			TicketSignature: response.Content.Signature,
+				Acknowledged:    true, // 默认发送确认成功
+// 签名字段将在下面根据 operation 动态设置
+
 		},
+	}
+
+		// 根据 operation 设置正确的签名
+	switch ack.Operation {
+	case "ticket-placement-ack":
+		ack.Content.TicketSignature = response.Content.Signature
+	case "ticket-cancel-ack":
+		ack.Content.CancellationSignature = response.Content.Signature
+	case "ticket-cashout-ack":
+		ack.Content.CashoutSignature = response.Content.Signature
+	case "ticket-ext-settlement-ack":
+		ack.Content.SettlementSignature = response.Content.Signature
 	}
 
 	return s.sendMessage(&ack)
