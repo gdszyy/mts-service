@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings" // Added strings package for ReplaceAll
 	"sync"
 	"time"
 
@@ -379,27 +380,33 @@ func (s *MTSService) SendTicket(ticket *models.TicketRequest) (*models.TicketRes
 	}
 }
 
-func (s *MTSService) sendMessage(msg interface{}) error {
-	s.connMu.RLock()
-	conn := s.conn
-	s.connMu.RUnlock()
+	func (s *MTSService) sendMessage(msg interface{}) error {
+		s.connMu.RLock()
+		conn := s.conn
+		s.connMu.RUnlock()
 
-	if conn == nil {
-		return fmt.Errorf("connection is nil")
+		if conn == nil {
+			return fmt.Errorf("connection is nil")
+		}
+
+		data, err := json.Marshal(msg)
+		if err != nil {
+			return fmt.Errorf("failed to marshal message: %w", err)
+		}
+
+		// Log the message content as requested by the user
+		// Replace \n with \t to prevent automatic line breaks in logs
+		logMessage := string(data)
+		logMessage = strings.ReplaceAll(logMessage, "\n", "\t")
+		log.Printf("Sending MTS message: %s", logMessage)
+
+		conn.SetWriteDeadline(time.Now().Add(WriteWait))
+		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+			return fmt.Errorf("failed to write message: %w", err)
+		}
+
+		return nil
 	}
-
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return fmt.Errorf("failed to marshal message: %w", err)
-	}
-
-	conn.SetWriteDeadline(time.Now().Add(WriteWait))
-	if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
-		return fmt.Errorf("failed to write message: %w", err)
-	}
-
-	return nil
-}
 
 func (s *MTSService) reconnect() {
 	s.connMu.Lock()
