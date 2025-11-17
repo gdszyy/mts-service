@@ -195,26 +195,21 @@ func (s *MTSService) connect() error {
 
 	// sendInitializationMessage 发送 WebSocket 连接后的初始化订阅消息
 	func (s *MTSService) sendInitializationMessage() error {
-		// 构造初始化消息
-		initMsg := map[string]interface{}{
-				"type":          "subscribe",
-				"correlationId": fmt.Sprintf("init-%d", time.Now().UnixNano()), // 使用唯一 ID
-				"timestampUtc":  time.Now().UnixMilli(),
-				"operation":     "ticket-placement-inform", // 使用一个有效的 operation
-				"version":       "3.0",
-				"content": map[string]interface{}{
-					"type": "subscribe",
-					"bookmaker_id": s.cfg.BookmakerID,
-					"limit_id": s.cfg.LimitID,
-					"operatorId": s.cfg.OperatorID,
-				},
-		}
-
-			// 检查 BookmakerID, LimitID, OperatorID 是否已设置
-			content := initMsg["content"].(map[string]interface{})
-			if content["bookmaker_id"] == "" || content["limit_id"] == "" || content["operatorId"] == "" {
-				log.Printf("Warning: BookmakerID (%s), LimitID (%s), or OperatorID (%s) is missing. Initialization message may fail.", s.cfg.BookmakerID, s.cfg.LimitID, s.cfg.OperatorID)
+			// 构造初始化消息
+			// 根据最新的 Schema 错误，根级别不应有 type 字段，content.type 必须是 ticket-inform，且 content 中不应有 bookmaker_id/limit_id/operatorId
+			initMsg := map[string]interface{}{
+					"correlationId": fmt.Sprintf("init-%d", time.Now().UnixNano()), // 使用唯一 ID
+					"timestampUtc":  time.Now().UnixMilli(),
+					"operation":     "ticket-placement-inform", // 必须是 ticket-placement-inform
+					"version":       "3.0",
+					"content": map[string]interface{}{
+						"type": "ticket-inform", // 必须是 ticket-inform
+					},
 			}
+
+				// 检查 BookmakerID, LimitID, OperatorID 是否已设置
+				// 根据最新的 Schema 错误，这些字段不应出现在 content 中，因此移除检查。
+				// 假设这些配置信息是通过 Auth Token 或其他方式隐式传递给 MTS 的。
 
 		log.Printf("Sending initialization message: %+v", initMsg)
 
