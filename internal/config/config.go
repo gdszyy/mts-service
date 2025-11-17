@@ -12,17 +12,17 @@ type Config struct {
 	// Server
 	Port string
 
-	// MTS
-	ClientID     string
-	ClientSecret string
-		BookmakerID  string
-		LimitID      string
-		OperatorID   string
-		VirtualHost  string
-		WSURL        string
-		WSAudience   string
-	AccessToken  string // Optional: UOF Access Token for whoami.xml
-	Production   bool
+		// MTS
+		ClientID     string
+		ClientSecret string
+			BookmakerID  string
+			LimitID      string
+			OperatorID   int64 // Changed to int64
+			VirtualHost  string
+			WSURL        string
+			WSAudience   string
+		AccessToken  string // Optional: UOF Access Token for whoami.xml
+		Production   bool
 
 	// OAuth
 		AuthURL string
@@ -34,10 +34,10 @@ func Load() (*Config, error) {
 		Port:         getEnv("PORT", "8080"),
 			ClientID:     getEnv("MTS_CLIENT_ID", ""),
 				ClientSecret: getEnv("MTS_CLIENT_SECRET", ""),
-				BookmakerID:  getEnv("MTS_BOOKMAKER_ID", ""),
-				LimitID:      getEnv("MTS_LIMIT_ID", ""),
-				OperatorID:   getEnv("MTS_OPERATOR_ID", ""),
-				VirtualHost:  getEnv("MTS_VIRTUAL_HOST", ""),
+					BookmakerID:  getEnv("MTS_BOOKMAKER_ID", ""),
+					LimitID:      getEnv("MTS_LIMIT_ID", ""),
+					OperatorID:   getEnvInt64("MTS_OPERATOR_ID", 0), // Changed to getEnvInt64
+					VirtualHost:  getEnv("MTS_VIRTUAL_HOST", ""),
 				WSURL:        getEnv("MTS_WS_URL", "wss://wss.dataplane-nonprod.sportradar.dev"),
 				WSAudience:   getEnv("MTS_WS_AUDIENCE", "mbs-dp-non-prod-wss"),
 			AccessToken:  getEnv("UOF_ACCESS_TOKEN", ""),
@@ -95,12 +95,21 @@ func getEnv(key, defaultValue string) string {
 
 
 
-func getEnvBool(key string, defaultValue bool) bool {
-	if value := os.Getenv(key); value != "" {
-		if b, err := strconv.ParseBool(value); err == nil {
-			return b
+	func getEnvInt64(key string, defaultValue int64) int64 {
+		if value := os.Getenv(key); value != "" {
+			if i, err := strconv.ParseInt(value, 10, 64); err == nil {
+				return i
+			}
 		}
+		return defaultValue
 	}
-	return defaultValue
-}
+
+	func getEnvBool(key string, defaultValue bool) bool {
+		if value := os.Getenv(key); value != "" {
+			if b, err := strconv.ParseBool(value); err == nil {
+				return b
+			}
+		}
+		return defaultValue
+	}
 

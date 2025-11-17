@@ -2,6 +2,7 @@ package models
 
 // TicketRequest represents a ticket placement request
 type TicketRequest struct {
+	OperatorID    int64         `json:"operatorId"` // Added operatorId
 	Operation     string        `json:"operation"`
 	Content       TicketContent `json:"content"`
 	CorrelationID string        `json:"correlationId"`
@@ -11,13 +12,14 @@ type TicketRequest struct {
 
 // TicketContent represents the content of a ticket
 type TicketContent struct {
-	Type       string      `json:"type"`
-	TicketID   string      `json:"ticketId"`
-	Sender     Sender      `json:"sender"`
-	Bets       []Bet       `json:"bets"`
-	TotalStake int64       `json:"totalStake"`
-	TestSource bool        `json:"testSource,omitempty"`
-	OddsChange string      `json:"oddsChange,omitempty"`
+	Type            string      `json:"type"`
+	TicketID        string      `json:"ticketId"`
+	TicketSignature string      `json:"ticketSignature"` // Added ticketSignature
+	Sender          Sender      `json:"sender"`
+	Bets            []Bet       `json:"bets"`
+	TotalStake      int64       `json:"totalStake"`
+	TestSource      bool        `json:"testSource,omitempty"`
+	OddsChange      string      `json:"oddsChange,omitempty"`
 }
 
 // Sender represents the bookmaker sending the ticket

@@ -156,8 +156,15 @@ func validatePlaceTicketRequest(req *PlaceTicketRequest) error {
 }
 
 func (h *Handler) buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequest {
-	// Generate correlation ID
-	correlationID := uuid.New().String()
+		// Generate correlation ID
+		correlationID := uuid.New().String()
+
+		// Operator ID is mandatory
+		operatorID := h.cfg.OperatorID
+		if operatorID == 0 {
+			log.Println("Warning: OperatorID is not set in config. Using default 9985.")
+			operatorID = 9985 // Fallback or a known test ID
+		}
 
 	// Build bets
 	bets := make([]models.Bet, len(req.Bets))
@@ -196,32 +203,34 @@ func (h *Handler) buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequ
 		languageID = "en"
 	}
 
-	return &models.TicketRequest{
-		Operation:     "ticket-placement",
-		CorrelationID: correlationID,
-		TimestampUTC:  time.Now().UnixMilli(),
-		Version:       "2.4",
-		Content: models.TicketContent{
-			Type:       "ticket",
-			TicketID:   req.TicketID,
-			TotalStake: req.TotalStake,
-			TestSource: req.TestSource,
-			OddsChange: oddsChange,
-			Sender: models.Sender{
-				Bookmaker: h.cfg.BookmakerID,
-				Currency:  req.Currency,
-				Channel:   channel,
-				EndCustomer: models.EndCustomer{
-					ID:         req.CustomerID,
-					IP:         req.CustomerIP,
-					LanguageID: languageID,
-					DeviceID:   req.DeviceID,
-					Confidence: 12092, // Default CCF
+		return &models.TicketRequest{
+			OperatorID:    operatorID, // Added operatorId
+			Operation:     "ticket-placement",
+			CorrelationID: correlationID,
+			TimestampUTC:  time.Now().UnixMilli(),
+			Version:       "2.4",
+			Content: models.TicketContent{
+				Type:            "ticket",
+				TicketID:        req.TicketID,
+				TicketSignature: "", // For ticket-placement, signature is usually optional/empty unless required by config
+				TotalStake:      req.TotalStake,
+				TestSource:      req.TestSource,
+				OddsChange:      oddsChange,
+				Sender: models.Sender{
+					Bookmaker: h.cfg.BookmakerID,
+					Currency:  req.Currency,
+					Channel:   channel,
+					EndCustomer: models.EndCustomer{
+						ID:         req.CustomerID,
+						IP:         req.CustomerIP,
+						LanguageID: languageID,
+						DeviceID:   req.DeviceID,
+						Confidence: 12092, // Default CCF
+					},
 				},
+				Bets: bets,
 			},
-			Bets: bets,
-		},
-	}
+		}
 }
 
 func respondError(w http.ResponseWriter, status int, message string, err error) {
