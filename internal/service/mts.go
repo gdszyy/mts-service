@@ -350,7 +350,7 @@ func (s *MTSService) SendTicket(ticket *models.TicketRequest) (*models.TicketRes
 			// 检查是否是 MTS 错误响应
 			if response.Content.Type == "error-reply" {
 				// 尝试解析更详细的错误信息
-				var errorContent models.ErrorReplyContent
+
 					// 由于我们在 handleMessage 中已经打印了详细日志，这里直接返回一个通用错误，并提示用户检查日志
 					// 更好的做法是在 handleMessage 中将 ErrorReplyContent 结构体放入 TicketResponse 中
 					// 但为了避免对 TicketResponse 结构体进行大规模修改，我们先采用日志+通用错误的方式
