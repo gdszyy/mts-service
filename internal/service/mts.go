@@ -220,7 +220,8 @@ func (s *MTSService) sendInitializationMessage() error {
 						"ticketId": fmt.Sprintf("init-ticket-%d", time.Now().UnixNano()), // Required non-empty string
 						"context": map[string]interface{}{ // Required object
 							"channel": map[string]interface{}{
-								"type": "mobile", // Minimal channel type
+								"type": "agent", // Changed from 'mobile' to 'agent' as suggested by MTS error
+								"lang": "EN",   // Added required 'lang' field
 							},
 							"limitId": 1409, // Example limitId
 						},
