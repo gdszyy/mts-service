@@ -203,11 +203,10 @@ func (s *MTSService) connect() error {
 					"timestampUtc":  time.Now().UnixMilli(),
 					"operation":     "ticket-placement-inform", // 必须是 ticket-placement-inform
 					"version": "3.0",
-					"content": map[string]interface{}{
-						"type": "ticket-inform", // 必须是 ticket-inform
-							"ticketId": fmt.Sprintf("init-ticket-%d", time.Now().UnixNano()), // 确保 ticketId 非空
-						// "ticketSignature": "initial-signature", // 移除占位符，因为这是请求，不需要签名
-					},
+						"content": map[string]interface{}{
+							"type": "ticket-inform", // 必须是 ticket-inform
+							// "ticketId" is not part of the ticket-inform content schema
+						},
 			}
 
 				// 检查 BookmakerID, LimitID, OperatorID 是否已设置
