@@ -215,11 +215,42 @@ func (s *MTSService) sendInitializationMessage() error {
 			"content": map[string]interface{}{
 				"type": "ticket-inform", // 必须是 ticket-inform
 				// The following fields are required for ticket-inform content, even if empty
-				"ticket": map[string]interface{}{
-					"ticketId": fmt.Sprintf("init-ticket-%d", time.Now().UnixNano()), // Required non-empty string
-					"context":  map[string]interface{}{},                            // Required object
-					"bets":     []interface{}{},                                      // Required array
-				},
+					"ticket": map[string]interface{}{
+						"type":     "ticket", // Required by example
+						"ticketId": fmt.Sprintf("init-ticket-%d", time.Now().UnixNano()), // Required non-empty string
+						"context": map[string]interface{}{ // Required object
+							"channel": map[string]interface{}{
+								"type": "mobile", // Minimal channel type
+							},
+							"limitId": 1409, // Example limitId
+						},
+						"bets": []interface{}{ // Required array, must have at least 1 item
+							map[string]interface{}{
+								"betId": fmt.Sprintf("init-bet-%d", time.Now().UnixNano()),
+								"selections": []interface{}{
+									map[string]interface{}{
+										"type":      "uf",
+										"productId": "3",
+										"eventId":   "sr:match:16470657",
+										"marketId":  "534",
+										"outcomeId": "pre:outcometext:9919",
+										"odds": map[string]interface{}{
+											"type":  "decimal",
+											"value": "2.10",
+										},
+									},
+								},
+								"stake": []interface{}{
+									map[string]interface{}{
+										"type":     "cash",
+										"currency": "EUR",
+										"amount":   "10",
+										"mode":     "total",
+									},
+								},
+							},
+						},
+					},
 				"betValidations": []interface{}{}, // Empty array of betValidations
 			},
 	}
