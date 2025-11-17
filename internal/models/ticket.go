@@ -127,10 +127,4 @@ type TicketAckContent struct {
 	CancellationSignature string `json:"cancellationSignature,omitempty"`
 	CashoutSignature      string `json:"cashoutSignature,omitempty"`
 	SettlementSignature   string `json:"settlementSignature,omitempty"`
-}e,omitempty"`
-	CancellationSignature string `json:"cancellationSignature,omitempty"`
-	CashoutSignature      string `json:"cashoutSignature,omitempty"`
-	SettlementSignature   string `json:"settlementSignature,omitempty"`
-	Acknowledged          bool   `json:"acknowledged"`
 }
-
