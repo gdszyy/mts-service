@@ -92,7 +92,6 @@ func NewMTSService(cfg *config.Config) *MTSService {
 		cancel:       cancel,
 		httpClient:   &http.Client{Timeout: 30 * time.Second},
 	}
-}
 
 func (s *MTSService) Start() error {
 	if err := s.connect(); err != nil {
@@ -259,7 +258,6 @@ func (s *MTSService) connectionRefreshMonitor() {
 			}
 		}
 	}
-}
 
 // initiateConnectionRefresh implements Option 1: Smooth connection switch
 // 1. Open new connection
@@ -348,7 +346,6 @@ func (s *MTSService) drainOldConnection() {
 			}
 		}
 	}
-}
 
 // sendInitializationMessage sends initialization message after connection
 func (s *MTSService) sendInitializationMessage() error {
@@ -419,7 +416,6 @@ func getLimitIDFromConfig(cfg *config.Config) int64 {
 	// Fallback to a default or 0 if not set
 	return 0
 }
-}
 
 func (s *MTSService) readPump(connState *ConnectionState) {
 	defer func() {
@@ -464,7 +460,6 @@ func (s *MTSService) readPump(connState *ConnectionState) {
 			s.handleMessage(message, connState)
 		}
 	}
-}
 
 func (s *MTSService) pingPump(connState *ConnectionState) {
 	ticker := time.NewTicker(PingPeriod)
@@ -490,7 +485,6 @@ func (s *MTSService) pingPump(connState *ConnectionState) {
 			}
 		}
 	}
-}
 
 func (s *MTSService) handleMessage(message []byte, connState *ConnectionState) {
 	var response models.TicketResponse
@@ -537,7 +531,6 @@ func (s *MTSService) handleMessage(message []byte, connState *ConnectionState) {
 			log.Printf("Timeout delivering response for correlation ID: %s", response.CorrelationID)
 		}
 	}
-}
 
 func (s *MTSService) sendAcknowledgement(response *models.TicketResponse) error {
 	operatorID := s.cfg.OperatorID
@@ -616,7 +609,6 @@ func (s *MTSService) SendTicket(ticket *models.TicketRequest) (*models.TicketRes
 		atomic.AddInt32(&activeConn.pendingResponses, -1)
 		return nil, fmt.Errorf("service closed")
 	}
-}
 
 func (s *MTSService) sendMessage(msg interface{}) error {
 	s.connMu.RLock()
@@ -681,7 +673,6 @@ func (s *MTSService) reconnect() {
 			}
 		}
 	}
-}
 
 func (s *MTSService) IsConnected() bool {
 	return atomic.LoadInt32(&s.connected) == 1
