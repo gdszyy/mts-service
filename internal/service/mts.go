@@ -61,6 +61,10 @@ type MTSService struct {
 	responses    map[string]chan *models.TicketResponse
 	responseMu   sync.RWMutex
 	
+	// Idempotency: store sent messages and their responses
+	sentMessages map[string]*models.TicketResponse // Key: JSON hash of the message
+	sentMsgMu    sync.RWMutex
+	
 	ctx          context.Context
 	cancel       context.CancelFunc
 	connected    int32 // atomic flag for connection status
@@ -79,13 +83,14 @@ func NewMTSService(cfg *config.Config) *MTSService {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &MTSService{
-		cfg:        cfg,
-		wsURL:      wsURL,
-		wsAudience: wsAudience,
-		responses:  make(map[string]chan *models.TicketResponse),
-		ctx:        ctx,
-		cancel:     cancel,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		cfg:          cfg,
+		wsURL:        wsURL,
+		wsAudience:   wsAudience,
+		responses:    make(map[string]chan *models.TicketResponse),
+		sentMessages: make(map[string]*models.TicketResponse),
+		ctx:          ctx,
+		cancel:       cancel,
+		httpClient:   &http.Client{Timeout: 30 * time.Second},
 	}
 }
 

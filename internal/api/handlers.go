@@ -112,6 +112,7 @@ type SelectionInput struct {
 	Odds      string `json:"odds"` // Odds as string (e.g., "1.59")
 	ProductID string `json:"productId,omitempty"`
 	MarketID  string `json:"marketId,omitempty"`
+	Specifiers string `json:"specifiers,omitempty"` // Only include if present
 }
 
 func validatePlaceTicketRequest(req *PlaceTicketRequest) error {
@@ -213,7 +214,9 @@ func (h *Handler) buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequ
 					marketID = defaultMarketID
 				}
 
-				allSelections = append(allSelections, models.Selection{
+				// Build selection with strict field compliance
+				// Only include specifiers if provided and not empty
+				selection := models.Selection{
 					Type:       "uf", // Unified Feed binding type
 					ProductID:  productID,
 					EventID:    selInput.EventID,
@@ -223,7 +226,14 @@ func (h *Handler) buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequ
 						Type:  "decimal",
 						Value: selInput.Odds,
 					},
-				})
+				}
+
+				// Only add specifiers if provided
+				if selInput.Specifiers != "" {
+					selection.Specifiers = selInput.Specifiers
+				}
+
+				allSelections = append(allSelections, selection)
 			}
 		}
 
@@ -267,7 +277,9 @@ func (h *Handler) buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequ
 					marketID = defaultMarketID
 				}
 
-				selections[j] = models.Selection{
+				// Build selection with strict field compliance
+				// Only include specifiers if provided and not empty
+				selection := models.Selection{
 					Type:       "uf", // Unified Feed binding type
 					ProductID:  productID,
 					EventID:    selInput.EventID,
@@ -278,6 +290,13 @@ func (h *Handler) buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequ
 						Value: selInput.Odds,
 					},
 				}
+
+				// Only add specifiers if provided
+				if selInput.Specifiers != "" {
+					selection.Specifiers = selInput.Specifiers
+				}
+
+				selections[j] = selection
 			}
 
 			// Convert stake amount to string with 8 decimal places
