@@ -397,7 +397,7 @@ func (s *MTSService) sendInitializationMessage() error {
 					Type: "agent",
 					Lang: "EN",
 				},
-				LimitID: 1409,
+					LimitID: getLimitIDFromConfig(s.cfg),
 			},
 		},
 	}
@@ -405,6 +405,20 @@ func (s *MTSService) sendInitializationMessage() error {
 	log.Printf("Sending initialization message: %+v", initMsg)
 
 	return s.sendMessage(initMsg)
+}
+
+func getLimitIDFromConfig(cfg *config.Config) int64 {
+	if cfg.LimitID != "" {
+		limitID, err := strconv.ParseInt(cfg.LimitID, 10, 64)
+		if err != nil {
+			log.Printf("Warning: Failed to parse LimitID from config '%s' for initialization message: %v, using 0.", cfg.LimitID, err)
+			return 0
+		}
+		return limitID
+	}
+	// Fallback to a default or 0 if not set
+	return 0
+}
 }
 
 func (s *MTSService) readPump(connState *ConnectionState) {
