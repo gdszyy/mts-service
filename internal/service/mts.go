@@ -195,6 +195,7 @@ func (s *MTSService) connect() error {
 	}
 
 // sendInitializationMessage 发送 WebSocket 连接后的初始化订阅消息
+// 按照 MTS Transaction 3.0 API 标准发送一个标准的 ticket-placement 消息作为初始化
 func (s *MTSService) sendInitializationMessage() error {
 	// Operator ID is mandatory for the envelope
 	operatorID := s.cfg.OperatorID
@@ -203,64 +204,50 @@ func (s *MTSService) sendInitializationMessage() error {
 		operatorID = 9985 // Fallback or a known test ID
 	}
 
-	// 构造初始化消息
-	// 根据最新的 Schema 错误，添加 operatorId 到 Envelope，并添加 ticket 和 betValidations 到 Content
-	// 重新检查文档发现 ticket-placement-inform 消息的 Content 应该包含 ticket 和 betValidations 字段
-	initMsg := map[string]interface{}{
-		"operatorId":    operatorID, // Added operatorId
-		"correlationId": fmt.Sprintf("init-%d", time.Now().UnixNano()), // 使用唯一 ID
-		"timestampUtc":  time.Now().UnixMilli(),
-		"operation":     "ticket-placement-inform", // 必须是 ticket-placement-inform
-		"version": "3.0",
-			"content": map[string]interface{}{
-				"type": "ticket-inform", // 必须是 ticket-inform
-				// The following fields are required for ticket-inform content, even if empty
-					"ticket": map[string]interface{}{
-						"type":     "ticket", // Required by example
-						"ticketId": fmt.Sprintf("init-ticket-%d", time.Now().UnixNano()), // Required non-empty string
-						"context": map[string]interface{}{ // Required object
-							"channel": map[string]interface{}{
-								"type": "agent", // Changed from 'mobile' to 'agent' as suggested by MTS error
-								"lang": "EN",   // Added required 'lang' field
-							},
-							"limitId": 1409, // Example limitId
-						},
-						"bets": []interface{}{ // Required array, must have at least 1 item
-							map[string]interface{}{
-								"betId": fmt.Sprintf("init-bet-%d", time.Now().UnixNano()),
-								"selections": []interface{}{
-									map[string]interface{}{
-										"type":      "uf",
-										"productId": "3",
-										"eventId":   "sr:match:16470657",
-										"marketId":  "534",
-										"outcomeId": "pre:outcometext:9919",
-										"odds": map[string]interface{}{
-											"type":  "decimal",
-											"value": "2.10",
-										},
-									},
-								},
-								"stake": []interface{}{
-									map[string]interface{}{
-										"type":     "cash",
-										"currency": "EUR",
-										"amount":   "10",
-										"mode":     "total",
-									},
-								},
+	// 构造初始化消息，遵循 MTS Transaction 3.0 API 标准
+	// 使用标准的 ticket-placement operation 和 ticket content type
+	initMsg := &models.TicketRequest{
+		OperatorID:    operatorID,
+		CorrelationID: fmt.Sprintf("init-%d", time.Now().UnixNano()),
+		TimestampUTC:  time.Now().UnixMilli(),
+		Operation:     "ticket-placement", // 遵循标准的交易请求操作
+		Version:       "3.0",
+		Content: models.TicketContent{
+			Type:     "ticket", // 遵循标准的内容类型
+			TicketID: fmt.Sprintf("init-ticket-%d", time.Now().UnixNano()),
+			Bets: []models.Bet{
+				{
+					Selections: []models.Selection{
+						{
+							Type:       "uf",
+							ProductID:  "3",
+							EventID:    "sr:match:16470657",
+							MarketID:   "534",
+							OutcomeID:  "pre:outcometext:9919",
+							Odds: models.Odds{
+								Type:  "decimal",
+								Value: "2.10",
 							},
 						},
 					},
-					"betValidations": []interface{}{ // Must have at least 1 item
-						map[string]interface{}{
-							"betId":   fmt.Sprintf("init-bet-%d", time.Now().UnixNano()),
-							"code":    1100,
-							"message": "Prevalidated, OK",
-							"rejected": false,
+					Stake: []models.Stake{
+						{
+							Type:     "cash",
+							Currency: "EUR",
+							Amount:   "10",
+							Mode:     "total",
 						},
 					},
+				},
 			},
+			Context: &models.Context{
+				Channel: &models.Channel{
+					Type: "agent",
+					Lang: "EN",
+				},
+				LimitID: 1409,
+			},
+		},
 	}
 
 	log.Printf("Sending initialization message: %+v", initMsg)
@@ -327,6 +314,14 @@ func (s *MTSService) pingPump() {
 			return
 		}
 
+			// 如果 OperatorID 在响应中缺失，从配置中补充
+			if response.OperatorID == 0 {
+				response.OperatorID = s.cfg.OperatorID
+				if response.OperatorID == 0 {
+					response.OperatorID = 9985
+				}
+			}
+
 			// 检查是否是 MTS 错误响应
 			if response.Content.Type == "error-reply" {
 				// 尝试解析更详细的错误信息
@@ -345,17 +340,17 @@ func (s *MTSService) pingPump() {
 			}
 
 			s.responseMu.RLock()
-	ch, ok := s.responses[response.CorrelationID]
-	s.responseMu.RUnlock()
+		ch, ok := s.responses[response.CorrelationID]
+		s.responseMu.RUnlock()
 
-	if ok {
-		select {
-		case ch <- &response:
-		case <-time.After(5 * time.Second):
-			log.Printf("Timeout delivering response for correlation ID: %s", response.CorrelationID)
+		if ok {
+			select {
+			case ch <- &response:
+			case <-time.After(5 * time.Second):
+				log.Printf("Timeout delivering response for correlation ID: %s", response.CorrelationID)
+			}
 		}
 	}
-}
 
 	func (s *MTSService) sendAcknowledgement(response *models.TicketResponse) error {
 		// Operator ID is mandatory for ACK messages
@@ -366,16 +361,15 @@ func (s *MTSService) pingPump() {
 		}
 
 		ack := models.TicketAck{
-			OperatorID:    operatorID, // Added operatorId
-			Operation:     "ticket-placement-ack",
+			OperatorID:    operatorID,
 			CorrelationID: response.CorrelationID,
 			TimestampUTC:  time.Now().UnixMilli(),
+			Operation:     "ticket-placement-ack",
 			Version:       "3.0",
 			Content: models.TicketAckContent{
 				Type:            "ticket-ack",
 				TicketID:        response.Content.TicketID,
 					Acknowledged:    true, // 默认发送确认成功
-	// 签名字段将在下面根据 operation 动态设置
 
 			},
 		}
@@ -510,4 +504,3 @@ func (s *MTSService) IsConnected() bool {
 	defer s.connMu.RUnlock()
 	return s.connected
 }
-

@@ -1,69 +1,75 @@
 package models
 
-// TicketRequest represents a ticket placement request
+// TicketRequest represents a ticket placement request conforming to MTS Transaction 3.0 API standard
 type TicketRequest struct {
-	OperatorID    int64         `json:"operatorId"` // Added operatorId
-	Operation     string        `json:"operation"`
-	Content       TicketContent `json:"content"`
-	CorrelationID string        `json:"correlationId"`
-	TimestampUTC  int64         `json:"timestampUtc"`
-	Version       string        `json:"version"`
+	OperatorID    int64           `json:"operatorId"`    // Operator ID provided by Sportradar
+	CorrelationID string          `json:"correlationId"` // Client-defined string for request-response pairing
+	TimestampUTC  int64           `json:"timestampUtc"`  // Client submission timestamp in Unix milliseconds
+	Operation     string          `json:"operation"`     // Should be "ticket-placement" for ticket placement requests
+	Version       string          `json:"version"`       // Protocol version, should be "3.0"
+	Content       TicketContent   `json:"content"`       // Message body containing transaction details
 }
 
-// TicketContent represents the content of a ticket
+// TicketContent represents the content of a ticket placement request
 type TicketContent struct {
-	Type            string      `json:"type"`
-	TicketID        string      `json:"ticketId"`
-	TicketSignature string      `json:"ticketSignature"` // Added ticketSignature
-	Sender          Sender      `json:"sender"`
-	Bets            []Bet       `json:"bets"`
-	TotalStake      int64       `json:"totalStake"`
-	TestSource      bool        `json:"testSource,omitempty"`
-	OddsChange      string      `json:"oddsChange,omitempty"`
+	Type     string       `json:"type"`     // Content type, should be "ticket"
+	TicketID string       `json:"ticketId"` // Client-defined ticket ID for unique identification
+	Bets     []Bet        `json:"bets"`     // Array of bets, must contain at least one bet
+	Context  *Context     `json:"context,omitempty"` // Optional transaction context information
 }
 
-// Sender represents the bookmaker sending the ticket
-type Sender struct {
-	Bookmaker    string      `json:"bookmaker"`
-	Currency     string      `json:"currency"`
-	Channel      string      `json:"channel,omitempty"`
-	EndCustomer  EndCustomer `json:"endCustomer"`
-	SuggestedCCF float64     `json:"suggestedCcf,omitempty"`
+// Context represents transaction context information
+type Context struct {
+	Channel *Channel `json:"channel,omitempty"` // Channel information
+	IP      string   `json:"ip,omitempty"`      // IP address
+	LimitID int64    `json:"limitId,omitempty"` // Limit ID
 }
 
-// EndCustomer represents the end customer placing the bet
-type EndCustomer struct {
-	ID         string `json:"id"`
-	IP         string `json:"ip,omitempty"`
-	LanguageID string `json:"languageId,omitempty"`
-	DeviceID   string `json:"deviceId,omitempty"`
-	Confidence int64  `json:"confidence,omitempty"`
+// Channel represents channel information within context
+type Channel struct {
+	Type string `json:"type"` // Channel type (e.g., "internet", "agent", "mobile")
+	Lang string `json:"lang"` // Language code (e.g., "EN")
 }
 
 // Bet represents a single bet within a ticket
 type Bet struct {
-	ID         string      `json:"id"`
-	Stake      int64       `json:"stake"`
-	Selections []Selection `json:"selections"`
-	BetBonus   int64       `json:"betBonus,omitempty"`
-	CustomBet  bool        `json:"customBet,omitempty"`
+	Selections []Selection `json:"selections"` // Array of selections, must contain at least one
+	Stake      []Stake     `json:"stake"`      // Array of stake objects, must contain at least one
 }
 
 // Selection represents a single selection within a bet
 type Selection struct {
-	ID      string `json:"id"`
-	EventID string `json:"eventId"`
-	Odds    int    `json:"odds"`
-	Banker  bool   `json:"banker,omitempty"`
+	Type       string `json:"type"`       // Selection type, should be "uf" for Unified Feed binding
+	ProductID  string `json:"productId"`  // Product ID (e.g., "3")
+	EventID    string `json:"eventId"`    // Event ID (e.g., "sr:match:14950205")
+	MarketID   string `json:"marketId"`   // Market ID (e.g., "14")
+	OutcomeID  string `json:"outcomeId"`  // Outcome ID (e.g., "1712")
+	Specifiers string `json:"specifiers,omitempty"` // Optional specifiers (e.g., "hcp=1:0")
+	Odds       Odds   `json:"odds"`       // Odds object containing type and value
+}
+
+// Odds represents the odds for a selection
+type Odds struct {
+	Type  string `json:"type"`  // Odds type (e.g., "decimal")
+	Value string `json:"value"` // Odds value as a string (e.g., "1.59")
+}
+
+// Stake represents a stake object within a bet
+type Stake struct {
+	Type     string `json:"type"`     // Stake type (e.g., "cash", "free")
+	Currency string `json:"currency"` // Currency code (e.g., "EUR", "mBTC")
+	Amount   string `json:"amount"`   // Amount as a string (e.g., "10")
+	Mode     string `json:"mode,omitempty"` // Optional mode (e.g., "total")
 }
 
 // TicketResponse represents the response from MTS
 type TicketResponse struct {
-	Operation     string                `json:"operation"`
-	Content       TicketResponseContent `json:"content"`
-	CorrelationID string                `json:"correlationId"`
-	TimestampUTC  int64                 `json:"timestampUtc"`
-	Version       string                `json:"version"`
+	OperatorID    int64                  `json:"operatorId,omitempty"`
+	Operation     string                 `json:"operation"`
+	Content       TicketResponseContent  `json:"content"`
+	CorrelationID string                 `json:"correlationId"`
+	TimestampUTC  int64                  `json:"timestampUtc"`
+	Version       string                 `json:"version"`
 }
 
 // TicketResponseContent represents the content of a ticket response
@@ -73,7 +79,7 @@ type TicketResponseContent struct {
 	Status       string      `json:"status"`
 	Reason       *Reason     `json:"reason,omitempty"`
 	BetDetails   []BetDetail `json:"betDetails,omitempty"`
-	Signature    string      `json:"signature"`
+	Signature    string      `json:"signature"` // Server-returned signature for acknowledgement
 	ExchangeRate float64     `json:"exchangeRate,omitempty"`
 }
 
@@ -100,25 +106,18 @@ type AlternativeStake struct {
 // SelectionDetail represents details of a selection in the response
 type SelectionDetail struct {
 	SelectionID string  `json:"selectionId"`
-	Odds        int     `json:"odds"`
+	Odds        string  `json:"odds"`
 	Reason      *Reason `json:"reason,omitempty"`
 }
 
 // TicketAck represents a ticket acknowledgement message
 type TicketAck struct {
-	OperatorID    int64            `json:"operatorId"` // Added operatorId
-	Operation     string           `json:"operation"`
-	Content       TicketAckContent `json:"content"`
+	OperatorID    int64            `json:"operatorId"`
 	CorrelationID string           `json:"correlationId"`
 	TimestampUTC  int64            `json:"timestampUtc"`
+	Operation     string           `json:"operation"`
 	Version       string           `json:"version"`
-}
-
-// ErrorReplyContent represents the content of an error reply
-type ErrorReplyContent struct {
-	Type    string `json:"type"`
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Content       TicketAckContent `json:"content"`
 }
 
 // TicketAckContent represents the content of a ticket acknowledgement
@@ -130,4 +129,11 @@ type TicketAckContent struct {
 	CancellationSignature string `json:"cancellationSignature,omitempty"`
 	CashoutSignature      string `json:"cashoutSignature,omitempty"`
 	SettlementSignature   string `json:"settlementSignature,omitempty"`
+}
+
+// ErrorReplyContent represents the content of an error reply
+type ErrorReplyContent struct {
+	Type    string `json:"type"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }

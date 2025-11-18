@@ -81,34 +81,34 @@ func (h *Handler) PlaceTicket(w http.ResponseWriter, r *http.Request) {
 }
 
 // PlaceTicketRequest represents the API request for placing a ticket
+// This structure accepts flexible input and maps it to MTS Transaction 3.0 API standard
 type PlaceTicketRequest struct {
-	TicketID    string      `json:"ticketId"`
-	CustomerID  string      `json:"customerId"`
-	Currency    string      `json:"currency"`
-	TotalStake  int64       `json:"totalStake"`
-	TestSource  bool        `json:"testSource"`
-	OddsChange  string      `json:"oddsChange"`
-	Bets        []BetInput  `json:"bets"`
-	CustomerIP  string      `json:"customerIp,omitempty"`
-	DeviceID    string      `json:"deviceId,omitempty"`
-	LanguageID  string      `json:"languageId,omitempty"`
-	Channel     string      `json:"channel,omitempty"`
+	TicketID   string      `json:"ticketId"`
+	CustomerID string      `json:"customerId"`
+	Currency   string      `json:"currency"`
+	TotalStake int64       `json:"totalStake"`
+	Bets       []BetInput  `json:"bets"`
+	CustomerIP string      `json:"customerIp,omitempty"`
+	DeviceID   string      `json:"deviceId,omitempty"`
+	LanguageID string      `json:"languageId,omitempty"`
+	Channel    string      `json:"channel,omitempty"`
+	ProductID  string      `json:"productId,omitempty"` // Default product ID for selections
+	MarketID   string      `json:"marketId,omitempty"`  // Default market ID for selections
 }
 
 // BetInput represents a bet in the API request
 type BetInput struct {
-	ID         string           `json:"id"`
-	Stake      int64            `json:"stake"`
-	CustomBet  bool             `json:"customBet"`
 	Selections []SelectionInput `json:"selections"`
+	Amount     string           `json:"amount"` // Stake amount as string
 }
 
 // SelectionInput represents a selection in the API request
 type SelectionInput struct {
-	ID      string `json:"id"`
-	EventID string `json:"eventId"`
-	Odds    int    `json:"odds"`
-	Banker  bool   `json:"banker"`
+	EventID   string `json:"eventId"`
+	OutcomeID string `json:"outcomeId"`
+	Odds      string `json:"odds"` // Odds as string (e.g., "1.59")
+	ProductID string `json:"productId,omitempty"`
+	MarketID  string `json:"marketId,omitempty"`
 }
 
 func validatePlaceTicketRequest(req *PlaceTicketRequest) error {
@@ -129,25 +129,22 @@ func validatePlaceTicketRequest(req *PlaceTicketRequest) error {
 	}
 
 	for i, bet := range req.Bets {
-		if bet.ID == "" {
-			return fmt.Errorf("bet[%d].id is required", i)
-		}
-		if bet.Stake <= 0 {
-			return fmt.Errorf("bet[%d].stake must be positive", i)
+		if bet.Amount == "" {
+			return fmt.Errorf("bet[%d].amount is required", i)
 		}
 		if len(bet.Selections) == 0 {
 			return fmt.Errorf("bet[%d] must have at least one selection", i)
 		}
 
 		for j, sel := range bet.Selections {
-			if sel.ID == "" {
-				return fmt.Errorf("bet[%d].selection[%d].id is required", i, j)
-			}
 			if sel.EventID == "" {
 				return fmt.Errorf("bet[%d].selection[%d].eventId is required", i, j)
 			}
-			if sel.Odds <= 0 {
-				return fmt.Errorf("bet[%d].selection[%d].odds must be positive", i, j)
+			if sel.OutcomeID == "" {
+				return fmt.Errorf("bet[%d].selection[%d].outcomeId is required", i, j)
+			}
+			if sel.Odds == "" {
+				return fmt.Errorf("bet[%d].selection[%d].odds is required", i, j)
 			}
 		}
 	}
@@ -156,43 +153,77 @@ func validatePlaceTicketRequest(req *PlaceTicketRequest) error {
 }
 
 func (h *Handler) buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequest {
-		// Generate correlation ID
-		correlationID := uuid.New().String()
+	// Generate correlation ID
+	correlationID := uuid.New().String()
 
-		// Operator ID is mandatory
-		operatorID := h.cfg.OperatorID
-		if operatorID == 0 {
-			log.Println("Warning: OperatorID is not set in config. Using default 9985.")
-			operatorID = 9985 // Fallback or a known test ID
-		}
+	// Operator ID is mandatory
+	operatorID := h.cfg.OperatorID
+	if operatorID == 0 {
+		log.Println("Warning: OperatorID is not set in config. Using default 9985.")
+		operatorID = 9985 // Fallback or a known test ID
+	}
 
-	// Build bets
+	// Set default product ID and market ID if not provided
+	defaultProductID := req.ProductID
+	if defaultProductID == "" {
+		defaultProductID = "3" // Default product ID
+	}
+
+	defaultMarketID := req.MarketID
+	if defaultMarketID == "" {
+		defaultMarketID = "14" // Default market ID
+	}
+
+	// Build bets according to MTS Transaction 3.0 API standard
 	bets := make([]models.Bet, len(req.Bets))
 	for i, betInput := range req.Bets {
 		selections := make([]models.Selection, len(betInput.Selections))
 		for j, selInput := range betInput.Selections {
+			// Use provided product/market ID or fall back to defaults
+			productID := selInput.ProductID
+			if productID == "" {
+				productID = defaultProductID
+			}
+
+			marketID := selInput.MarketID
+			if marketID == "" {
+				marketID = defaultMarketID
+			}
+
 			selections[j] = models.Selection{
-				ID:      selInput.ID,
-				EventID: selInput.EventID,
-				Odds:    selInput.Odds,
-				Banker:  selInput.Banker,
+				Type:       "uf", // Unified Feed binding type
+				ProductID:  productID,
+				EventID:    selInput.EventID,
+				MarketID:   marketID,
+				OutcomeID:  selInput.OutcomeID,
+				Odds: models.Odds{
+					Type:  "decimal",
+					Value: selInput.Odds,
+				},
 			}
 		}
 
+		// Convert stake amount to string if needed
+		stakeAmount := betInput.Amount
+		if stakeAmount == "" {
+			// Calculate stake from total stake if not provided
+			stakeAmount = fmt.Sprintf("%d", req.TotalStake/int64(len(req.Bets)))
+		}
+
 		bets[i] = models.Bet{
-			ID:         betInput.ID,
-			Stake:      betInput.Stake,
-			CustomBet:  betInput.CustomBet,
 			Selections: selections,
+			Stake: []models.Stake{
+				{
+					Type:     "cash",
+					Currency: req.Currency,
+					Amount:   stakeAmount,
+					Mode:     "total",
+				},
+			},
 		}
 	}
 
-	// Default values
-	oddsChange := req.OddsChange
-	if oddsChange == "" {
-		oddsChange = "any"
-	}
-
+	// Set default channel and language
 	channel := req.Channel
 	if channel == "" {
 		channel = "internet"
@@ -200,37 +231,28 @@ func (h *Handler) buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequ
 
 	languageID := req.LanguageID
 	if languageID == "" {
-		languageID = "en"
+		languageID = "EN"
 	}
 
-		return &models.TicketRequest{
-			OperatorID:    operatorID, // Added operatorId
-			Operation:     "ticket-placement",
-			CorrelationID: correlationID,
-			TimestampUTC:  time.Now().UnixMilli(),
-			Version:       "2.4",
-			Content: models.TicketContent{
-				Type:            "ticket",
-				TicketID:        req.TicketID,
-				TicketSignature: "", // For ticket-placement, signature is usually optional/empty unless required by config
-				TotalStake:      req.TotalStake,
-				TestSource:      req.TestSource,
-				OddsChange:      oddsChange,
-				Sender: models.Sender{
-					Bookmaker: h.cfg.BookmakerID,
-					Currency:  req.Currency,
-					Channel:   channel,
-					EndCustomer: models.EndCustomer{
-						ID:         req.CustomerID,
-						IP:         req.CustomerIP,
-						LanguageID: languageID,
-						DeviceID:   req.DeviceID,
-						Confidence: 12092, // Default CCF
-					},
+	return &models.TicketRequest{
+		OperatorID:    operatorID,
+		CorrelationID: correlationID,
+		TimestampUTC:  time.Now().UnixMilli(),
+		Operation:     "ticket-placement", // Standard MTS Transaction 3.0 operation
+		Version:       "3.0",              // Standard MTS Transaction 3.0 version
+		Content: models.TicketContent{
+			Type:     "ticket", // Standard MTS Transaction 3.0 content type
+			TicketID: req.TicketID,
+			Bets:     bets,
+			Context: &models.Context{
+				Channel: &models.Channel{
+					Type: channel,
+					Lang: languageID,
 				},
-				Bets: bets,
+				IP: req.CustomerIP,
 			},
-		}
+		},
+	}
 }
 
 func respondError(w http.ResponseWriter, status int, message string, err error) {
@@ -245,4 +267,3 @@ func respondError(w http.ResponseWriter, status int, message string, err error) 
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(response)
 }
-
