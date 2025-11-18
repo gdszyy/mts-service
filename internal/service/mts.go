@@ -378,12 +378,12 @@ func (s *MTSService) sendInitializationMessage() error {
 						},
 					},
 					Stake: []models.Stake{
-						{
-							Type:     "cash",
-							Currency: "EUR",
-							Amount:   "10",
-							Mode:     "total",
-						},
+							{
+								Type:     "cash",
+								Currency: "EUR",
+								Amount:   "10.00000000", // 8 decimal places precision
+								Mode:     "total", // Default mode for system bets
+							},
 					},
 				},
 			},

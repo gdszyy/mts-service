@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gdsZyy/mts-service/internal/config"
@@ -86,7 +88,7 @@ type PlaceTicketRequest struct {
 	TicketID   string      `json:"ticketId"`
 	CustomerID string      `json:"customerId"`
 	Currency   string      `json:"currency"`
-	TotalStake int64       `json:"totalStake"`
+	TotalStake string      `json:"totalStake"` // Changed to string to support 8 decimal places
 	Bets       []BetInput  `json:"bets"`
 	CustomerIP string      `json:"customerIp,omitempty"`
 	DeviceID   string      `json:"deviceId,omitempty"`
@@ -94,12 +96,13 @@ type PlaceTicketRequest struct {
 	Channel    string      `json:"channel,omitempty"`
 	ProductID  string      `json:"productId,omitempty"` // Default product ID for selections
 	MarketID   string      `json:"marketId,omitempty"`  // Default market ID for selections
+	BetType    string      `json:"betType,omitempty"`   // "single", "system", "parlay" etc. For system/串关, use "system"
 }
 
 // BetInput represents a bet in the API request
 type BetInput struct {
 	Selections []SelectionInput `json:"selections"`
-	Amount     string           `json:"amount"` // Stake amount as string
+	Amount     string           `json:"amount"` // Stake amount as string with up to 8 decimal places
 }
 
 // SelectionInput represents a selection in the API request
@@ -121,8 +124,8 @@ func validatePlaceTicketRequest(req *PlaceTicketRequest) error {
 	if req.Currency == "" {
 		return fmt.Errorf("currency is required")
 	}
-	if req.TotalStake <= 0 {
-		return fmt.Errorf("totalStake must be positive")
+	if req.TotalStake == "" {
+		return fmt.Errorf("totalStake is required")
 	}
 	if len(req.Bets) == 0 {
 		return fmt.Errorf("at least one bet is required")
@@ -152,6 +155,19 @@ func validatePlaceTicketRequest(req *PlaceTicketRequest) error {
 	return nil
 }
 
+// formatAmountTo8Decimals formats an amount string to have exactly 8 decimal places
+func formatAmountTo8Decimals(amount string) string {
+	// Parse the amount as a float
+	val, err := strconv.ParseFloat(amount, 64)
+	if err != nil {
+		log.Printf("Warning: Failed to parse amount '%s': %v, using as-is", amount, err)
+		return amount
+	}
+
+	// Format to 8 decimal places
+	return fmt.Sprintf("%.8f", val)
+}
+
 func (h *Handler) buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequest {
 	// Generate correlation ID
 	correlationID := uuid.New().String()
@@ -174,52 +190,120 @@ func (h *Handler) buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequ
 		defaultMarketID = "14" // Default market ID
 	}
 
-	// Build bets according to MTS Transaction 3.0 API standard
-	bets := make([]models.Bet, len(req.Bets))
-	for i, betInput := range req.Bets {
-		selections := make([]models.Selection, len(betInput.Selections))
-		for j, selInput := range betInput.Selections {
-			// Use provided product/market ID or fall back to defaults
-			productID := selInput.ProductID
-			if productID == "" {
-				productID = defaultProductID
-			}
+	// Determine if this is a system/parlay bet (only one betId for all selections)
+	isSystemBet := strings.ToLower(req.BetType) == "system" || strings.ToLower(req.BetType) == "parlay"
 
-			marketID := selInput.MarketID
-			if marketID == "" {
-				marketID = defaultMarketID
-			}
+	var bets []models.Bet
 
-			selections[j] = models.Selection{
-				Type:       "uf", // Unified Feed binding type
-				ProductID:  productID,
-				EventID:    selInput.EventID,
-				MarketID:   marketID,
-				OutcomeID:  selInput.OutcomeID,
-				Odds: models.Odds{
-					Type:  "decimal",
-					Value: selInput.Odds,
-				},
+	if isSystemBet {
+		// For system/parlay bets: all selections go into a single bet with a single betId
+		// betId format: ticketId-1
+		allSelections := []models.Selection{}
+
+		for _, betInput := range req.Bets {
+			for _, selInput := range betInput.Selections {
+				// Use provided product/market ID or fall back to defaults
+				productID := selInput.ProductID
+				if productID == "" {
+					productID = defaultProductID
+				}
+
+				marketID := selInput.MarketID
+				if marketID == "" {
+					marketID = defaultMarketID
+				}
+
+				allSelections = append(allSelections, models.Selection{
+					Type:       "uf", // Unified Feed binding type
+					ProductID:  productID,
+					EventID:    selInput.EventID,
+					MarketID:   marketID,
+					OutcomeID:  selInput.OutcomeID,
+					Odds: models.Odds{
+						Type:  "decimal",
+						Value: selInput.Odds,
+					},
+				})
 			}
 		}
 
-		// Convert stake amount to string if needed
-		stakeAmount := betInput.Amount
+		// For system bet, use the first bet's amount or total stake
+		stakeAmount := req.Bets[0].Amount
 		if stakeAmount == "" {
-			// Calculate stake from total stake if not provided
-			stakeAmount = fmt.Sprintf("%d", req.TotalStake/int64(len(req.Bets)))
+			stakeAmount = req.TotalStake
 		}
+		stakeAmount = formatAmountTo8Decimals(stakeAmount)
 
-		bets[i] = models.Bet{
-			Selections: selections,
-			Stake: []models.Stake{
-				{
-					Type:     "cash",
-					Currency: req.Currency,
-					Amount:   stakeAmount,
-					Mode:     "total",
+		// Default mode to "total" if not specified
+		stakeMode := "total"
+
+		bets = []models.Bet{
+			{
+				Selections: allSelections,
+				Stake: []models.Stake{
+					{
+						Type:     "cash",
+						Currency: req.Currency,
+						Amount:   stakeAmount,
+						Mode:     stakeMode,
+					},
 				},
 			},
+		}
+	} else {
+		// For regular/single bets: each bet gets its own betId
+		bets = make([]models.Bet, len(req.Bets))
+		for i, betInput := range req.Bets {
+			selections := make([]models.Selection, len(betInput.Selections))
+			for j, selInput := range betInput.Selections {
+				// Use provided product/market ID or fall back to defaults
+				productID := selInput.ProductID
+				if productID == "" {
+					productID = defaultProductID
+				}
+
+				marketID := selInput.MarketID
+				if marketID == "" {
+					marketID = defaultMarketID
+				}
+
+				selections[j] = models.Selection{
+					Type:       "uf", // Unified Feed binding type
+					ProductID:  productID,
+					EventID:    selInput.EventID,
+					MarketID:   marketID,
+					OutcomeID:  selInput.OutcomeID,
+					Odds: models.Odds{
+						Type:  "decimal",
+						Value: selInput.Odds,
+					},
+				}
+			}
+
+			// Convert stake amount to string with 8 decimal places
+			stakeAmount := betInput.Amount
+			if stakeAmount == "" {
+				// Calculate stake from total stake if not provided
+				totalStakeVal, _ := strconv.ParseFloat(req.TotalStake, 64)
+				stakeAmount = fmt.Sprintf("%.8f", totalStakeVal/float64(len(req.Bets)))
+			} else {
+				stakeAmount = formatAmountTo8Decimals(stakeAmount)
+			}
+
+			// Default mode to "total" if not specified
+			stakeMode := "total"
+
+			bets[i] = models.Bet{
+				Selections: selections,
+				Stake: []models.Stake{
+					{
+						Type:     "cash",
+						Currency: req.Currency,
+						Amount:   stakeAmount,
+						Mode:     stakeMode,
+					},
+				},
+			}
 		}
 	}
 
