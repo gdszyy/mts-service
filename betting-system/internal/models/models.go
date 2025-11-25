@@ -68,6 +68,7 @@ type Event struct {
 	Status       string         `gorm:"size:20;not null;default:'scheduled'" json:"status"` // scheduled/live/finished/cancelled
 	HomeScore    *int           `json:"home_score,omitempty"`
 	AwayScore    *int           `json:"away_score,omitempty"`
+	Markets      []Market       `gorm:"foreignKey:EventID" json:"markets,omitempty"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
@@ -91,6 +92,7 @@ type Market struct {
 	MarketType string         `gorm:"size:50;not null" json:"market_type"` // 1x2/handicap/totals等
 	Specifier  string         `gorm:"size:100" json:"specifier,omitempty"` // 盘口参数
 	Status     string         `gorm:"size:20;not null;default:'active'" json:"status"` // active/suspended/settled/cancelled
+	Outcomes   []Outcome      `gorm:"foreignKey:MarketID" json:"outcomes,omitempty"`
 	CreatedAt  time.Time      `json:"created_at"`
 	UpdatedAt  time.Time      `json:"updated_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`

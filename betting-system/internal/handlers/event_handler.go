@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gdsZyy/betting-system/internal/database"
@@ -100,18 +101,20 @@ func (h *EventHandler) GetEvent(c *gin.Context) {
 
 // ListEvents 获取赛事列表
 // @Summary 获取赛事列表
-// @Description 获取赛事列表
+// @Description 获取赛事列表，支持指定返回的 market 类型
 // @Tags events
 // @Produce json
 // @Param status query string false "状态筛选"
 // @Param limit query int false "每页数量" default(20)
 // @Param offset query int false "偏移量" default(0)
+// @Param market_types query string false "Market类型列表，逗号分隔，如: 1x2,handicap,totals"
 // @Success 200 {object} EventListResponse
 // @Router /api/events [get]
 func (h *EventHandler) ListEvents(c *gin.Context) {
 	status := c.Query("status")
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	marketTypesParam := c.Query("market_types")
 
 	query := database.DB.Model(&models.Event{})
 	if status != "" {
@@ -128,6 +131,36 @@ func (h *EventHandler) ListEvents(c *gin.Context) {
 			Message: err.Error(),
 		})
 		return
+	}
+
+	// 如果指定了 market_types，则加载过滤后的 markets 和 outcomes
+	if marketTypesParam != "" {
+		marketTypes := strings.Split(marketTypesParam, ",")
+		// 清理空格
+		for i, mt := range marketTypes {
+			marketTypes[i] = strings.TrimSpace(mt)
+		}
+
+		// 为每个 event 加载指定类型的 markets
+		for i := range events {
+			var markets []models.Market
+			if err := database.DB.Where("event_id = ? AND market_type IN ?", events[i].ID, marketTypes).
+				Preload("Event").
+				Find(&markets).Error; err != nil {
+				// 如果加载失败，继续处理其他 events
+				continue
+			}
+
+			// 为每个 market 加载 outcomes
+			for j := range markets {
+				var outcomes []models.Outcome
+				if err := database.DB.Where("market_id = ?", markets[j].ID).Find(&outcomes).Error; err == nil {
+					markets[j].Outcomes = outcomes
+				}
+			}
+
+			events[i].Markets = markets
+		}
 	}
 
 	c.JSON(http.StatusOK, EventListResponse{
