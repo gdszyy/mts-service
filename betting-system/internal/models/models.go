@@ -6,6 +6,42 @@ import (
 	"gorm.io/gorm"
 )
 
+// Sport 运动类型模型
+type Sport struct {
+	ID         int64          `gorm:"primaryKey;autoIncrement" json:"id"`
+	ExternalID string         `gorm:"uniqueIndex;size:100;not null" json:"external_id"` // sr:sport:1
+	Name       string         `gorm:"size:255;not null" json:"name"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+// Category 分类模型
+type Category struct {
+	ID         int64          `gorm:"primaryKey;autoIncrement" json:"id"`
+	ExternalID string         `gorm:"uniqueIndex;size:100;not null" json:"external_id"` // sr:category:28
+	SportID    int64          `gorm:"index;not null" json:"sport_id"`
+	Sport      Sport          `gorm:"foreignKey:SportID" json:"sport,omitempty"`
+	Name       string         `gorm:"size:255;not null" json:"name"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+// Tournament 联赛模型
+type Tournament struct {
+	ID           int64          `gorm:"primaryKey;autoIncrement" json:"id"`
+	ExternalID   string         `gorm:"uniqueIndex;size:100;not null" json:"external_id"` // sr:stage:607727
+	CategoryID   int64          `gorm:"index;not null" json:"category_id"`
+	Category     Category       `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
+	Name         string         `gorm:"size:255;not null" json:"name"`
+	Scheduled    *time.Time     `json:"scheduled,omitempty"`
+	ScheduledEnd *time.Time     `json:"scheduled_end,omitempty"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
 // User 用户模型
 type User struct {
 	ID        int64          `gorm:"primaryKey;autoIncrement" json:"id"`
@@ -21,19 +57,21 @@ type User struct {
 
 // Event 赛事模型
 type Event struct {
-	ID         int64          `gorm:"primaryKey;autoIncrement" json:"id"`
-	ExternalID string         `gorm:"uniqueIndex;size:100" json:"external_id"`
-	SportID    string         `gorm:"size:50;not null" json:"sport_id"`
-	HomeTeam   string         `gorm:"size:255;not null" json:"home_team"`
-	AwayTeam   string         `gorm:"size:255;not null" json:"away_team"`
-	StartTime  time.Time      `gorm:"not null" json:"start_time"`
-	Status     string         `gorm:"size:20;not null;default:'scheduled'" json:"status"` // scheduled/live/finished/cancelled
-	HomeScore  *int           `json:"home_score,omitempty"`
-	AwayScore  *int           `json:"away_score,omitempty"`
-	CreatedAt  time.Time      `json:"created_at"`
-	UpdatedAt  time.Time      `json:"updated_at"`
-		DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
-	}
+	ID           int64          `gorm:"primaryKey;autoIncrement" json:"id"`
+	ExternalID   string         `gorm:"uniqueIndex;size:100" json:"external_id"`
+	SportID      string         `gorm:"size:50;not null" json:"sport_id"`
+	TournamentID *int64         `gorm:"index" json:"tournament_id,omitempty"`
+	Tournament   *Tournament    `gorm:"foreignKey:TournamentID" json:"tournament,omitempty"`
+	HomeTeam     string         `gorm:"size:255;not null" json:"home_team"`
+	AwayTeam     string         `gorm:"size:255;not null" json:"away_team"`
+	StartTime    time.Time      `gorm:"not null" json:"start_time"`
+	Status       string         `gorm:"size:20;not null;default:'scheduled'" json:"status"` // scheduled/live/finished/cancelled
+	HomeScore    *int           `json:"home_score,omitempty"`
+	AwayScore    *int           `json:"away_score,omitempty"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
+}
 
 	// IsLive 判断赛事是否正在进行
 	func (e *Event) IsLive() bool {
@@ -131,6 +169,18 @@ type BetLegSelection struct {
 // TableName 指定表名
 func (User) TableName() string {
 	return "users"
+}
+
+func (Sport) TableName() string {
+	return "sports"
+}
+
+func (Category) TableName() string {
+	return "categories"
+}
+
+func (Tournament) TableName() string {
+	return "tournaments"
 }
 
 func (Event) TableName() string {

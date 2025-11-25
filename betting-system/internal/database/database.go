@@ -121,6 +121,9 @@ var DB *gorm.DB
 func AutoMigrate() error {
 	err := DB.AutoMigrate(
 		&models.User{},
+		&models.Sport{},
+		&models.Category{},
+		&models.Tournament{},
 		&models.Event{},
 		&models.Market{},
 		&models.Outcome{},

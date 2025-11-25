@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/gdsZyy/betting-system/internal/database"
 	"github.com/gdsZyy/betting-system/internal/handlers"
 	"github.com/gin-gonic/gin"
 )
@@ -11,6 +12,8 @@ func SetupRoutes(r *gin.Engine) {
 	betHandler := handlers.NewBetHandler()
 	eventHandler := handlers.NewEventHandler()
 	userHandler := handlers.NewUserHandler()
+	categoryHandler := handlers.NewCategoryHandler(database.DB)
+	tournamentHandler := handlers.NewTournamentHandler(database.DB)
 
 	// API 路由组
 	api := r.Group("/api")
@@ -23,6 +26,18 @@ func SetupRoutes(r *gin.Engine) {
 			users.POST("/:id/deposit", userHandler.DepositBalance)
 			users.POST("/:id/withdraw", userHandler.WithdrawBalance)
 			users.GET("/:user_id/bets", betHandler.GetUserBets)
+		}
+
+		// 分类路由
+		categories := api.Group("/categories")
+		{
+			categories.GET("", categoryHandler.GetCategories)
+		}
+
+		// 联赛路由
+		tournaments := api.Group("/tournaments")
+		{
+			tournaments.GET("", tournamentHandler.GetTournaments)
 		}
 
 		// 赛事路由
