@@ -62,6 +62,13 @@ type Stake struct {
 	Mode     string `json:"mode,omitempty"` // Optional mode (e.g., "total")
 }
 
+// ExchangeRate represents currency exchange rate information
+type ExchangeRate struct {
+	FromCurrency string `json:"fromCurrency"` // Original currency (e.g., "EUR", "USD")
+	ToCurrency   string `json:"toCurrency"`   // Target currency (e.g., "EUR")
+	Rate         string `json:"rate"`         // Exchange rate as string (e.g., "1.00000000")
+}
+
 // TicketResponse represents the response from MTS
 type TicketResponse struct {
 	OperatorID    int64                  `json:"operatorId,omitempty"`
@@ -74,13 +81,15 @@ type TicketResponse struct {
 
 // TicketResponseContent represents the content of a ticket response
 type TicketResponseContent struct {
-	Type         string      `json:"type"`
-	TicketID     string      `json:"ticketId"`
-	Status       string      `json:"status"`
-	Reason       *Reason     `json:"reason,omitempty"`
-	BetDetails   []BetDetail `json:"betDetails,omitempty"`
-	Signature    string      `json:"signature"` // Server-returned signature for acknowledgement
-	ExchangeRate float64     `json:"exchangeRate,omitempty"`
+	Type         string         `json:"type"`
+	TicketID     string         `json:"ticketId"`
+	Status       string         `json:"status"`
+	Code         int            `json:"code,omitempty"`         // Validation code (0=success, negative=error)
+	Message      string         `json:"message,omitempty"`      // Readable validation message
+	Reason       *Reason        `json:"reason,omitempty"`       // Deprecated, use Code/Message instead
+	BetDetails   []BetDetail    `json:"betDetails,omitempty"`
+	Signature    string         `json:"signature"`              // Server-returned signature for acknowledgement
+	ExchangeRate []ExchangeRate `json:"exchangeRate,omitempty"` // Array of exchange rates
 }
 
 // Reason represents the reason for ticket rejection
@@ -91,9 +100,11 @@ type Reason struct {
 
 // BetDetail represents details of a bet in the response
 type BetDetail struct {
-	BetID            string            `json:"betId"`
-	Status           string            `json:"status"`
-	Reason           *Reason           `json:"reason,omitempty"`
+	BetID            string            `json:"betId,omitempty"`
+	Code             int               `json:"code,omitempty"`    // Bet-level validation code
+	Message          string            `json:"message,omitempty"` // Bet-level validation message
+	Status           string            `json:"status,omitempty"`
+	Reason           *Reason           `json:"reason,omitempty"` // Deprecated
 	AlternativeStake *AlternativeStake `json:"alternativeStake,omitempty"`
 	SelectionDetails []SelectionDetail `json:"selectionDetails,omitempty"`
 }
@@ -105,9 +116,10 @@ type AlternativeStake struct {
 
 // SelectionDetail represents details of a selection in the response
 type SelectionDetail struct {
-	SelectionID string  `json:"selectionId"`
-	Odds        string  `json:"odds"`
-	Reason      *Reason `json:"reason,omitempty"`
+	Selection Selection `json:"selection"`         // Complete selection object
+	Code      int       `json:"code,omitempty"`    // Selection-level validation code
+	Message   string    `json:"message,omitempty"` // Selection-level validation message
+	Reason    *Reason   `json:"reason,omitempty"`  // Deprecated
 }
 
 // TicketAck represents a ticket acknowledgement message
