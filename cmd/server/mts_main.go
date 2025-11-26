@@ -55,11 +55,44 @@ func main() {
 
 	// Setup routes
 	mux := http.NewServeMux()
+	
+	// Health check
 	mux.HandleFunc("/health", handler.HealthCheck)
+	
+	// Legacy endpoint (for backward compatibility)
 	mux.HandleFunc("/api/tickets", handler.PlaceTicket)
+	
+	// New bet type endpoints
+	mux.HandleFunc("/api/bets/single", handler.PlaceSingleBet)
+	mux.HandleFunc("/api/bets/accumulator", handler.PlaceAccumulatorBet)
+	mux.HandleFunc("/api/bets/system", handler.PlaceSystemBet)
+	mux.HandleFunc("/api/bets/banker-system", handler.PlaceBankerSystemBet)
+	mux.HandleFunc("/api/bets/preset", handler.PlacePresetSystemBet)
+	mux.HandleFunc("/api/bets/multi", handler.PlaceMultiBet)
+	
+	// Cashout endpoint
+	mux.HandleFunc("/api/cashout", handler.RequestCashout)
+	
+	// Root endpoint with API documentation
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"service":"mts-service","version":"1.0.0","endpoints":["/health","/api/tickets"]}`))
+			w.Write([]byte(`{
+				"service": "mts-service",
+				"version": "2.0.0",
+				"endpoints": {
+					"health": "/health",
+					"legacy": "/api/tickets",
+					"bets": {
+						"single": "/api/bets/single",
+						"accumulator": "/api/bets/accumulator",
+						"system": "/api/bets/system",
+						"banker_system": "/api/bets/banker-system",
+						"preset": "/api/bets/preset",
+						"multi": "/api/bets/multi"
+					},
+					"cashout": "/api/cashout"
+				}
+			}`)
 	})
 
 	// Start HTTP server
