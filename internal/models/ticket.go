@@ -38,14 +38,23 @@ type Bet struct {
 }
 
 // Selection represents a single selection within a bet
+// For standard selections: type="uf", "external", or "uf-custom-bet"
+// For system bets: type="system" with nested selections
 type Selection struct {
-	Type       string `json:"type"`       // Selection type, should be "uf" for Unified Feed binding
-	ProductID  string `json:"productId"`  // Product ID (e.g., "3")
-	EventID    string `json:"eventId"`    // Event ID (e.g., "sr:match:14950205")
-	MarketID   string `json:"marketId"`   // Market ID (e.g., "14")
-	OutcomeID  string `json:"outcomeId"`  // Outcome ID (e.g., "1712")
+	// Common fields
+	Type string `json:"type"` // Selection type: "uf", "external", "uf-custom-bet", or "system"
+
+	// Fields for standard selections (type="uf", "external", "uf-custom-bet")
+	ProductID  string `json:"productId,omitempty"`  // Product ID (e.g., "3")
+	EventID    string `json:"eventId,omitempty"`    // Event ID (e.g., "sr:match:14950205")
+	MarketID   string `json:"marketId,omitempty"`   // Market ID (e.g., "14")
+	OutcomeID  string `json:"outcomeId,omitempty"`  // Outcome ID (e.g., "1712")
 	Specifiers string `json:"specifiers,omitempty"` // Optional specifiers (e.g., "hcp=1:0")
-	Odds       Odds   `json:"odds"`       // Odds object containing type and value
+	Odds       *Odds  `json:"odds,omitempty"`       // Odds object (not used for system type)
+
+	// Fields for system bets (type="system")
+	Size       []int       `json:"size,omitempty"`       // Array of combination sizes (e.g., [2,3] for doubles and trebles)
+	Selections []Selection `json:"selections,omitempty"` // Nested selections for system bets
 }
 
 // Odds represents the odds for a selection
