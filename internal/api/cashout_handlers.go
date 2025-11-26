@@ -40,18 +40,19 @@ func (h *Handler) RequestCashout(w http.ResponseWriter, r *http.Request) {
 	// Build cashout request
 	cashoutReq := buildCashoutRequest(&req, h.cfg.OperatorID)
 
-	// Send to MTS (需要在 service 层实现 SendCashout 方法)
-	// TODO: Implement SendCashout in MTSService
-	// response, err := h.mtsService.SendCashout(cashoutReq)
-	
-	// 临时返回错误，提示需要实现
-	respondJSON(w, http.StatusNotImplemented, APIResponse{
-		Success: false,
-		Error:   &APIError{
-			Code:    501,
-			Message: "Cashout functionality not yet implemented in service layer",
-			Details: fmt.Sprintf("Cashout request built successfully: %+v", cashoutReq),
-		},
+	// Send to MTS
+	response, err := h.mtsService.SendCashout(cashoutReq)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, APIResponse{
+			Success: false,
+			Error:   &APIError{Code: 500, Message: "Failed to send cashout", Details: err.Error()},
+		})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, APIResponse{
+		Success: true,
+		Data:    response,
 	})
 }
 

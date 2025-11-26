@@ -59,8 +59,9 @@ type MTSService struct {
 	tokenExpiry  time.Time
 	tokenMu      sync.RWMutex
 	
-	responses    map[string]chan *models.TicketResponse
-	responseMu   sync.RWMutex
+	responses        map[string]chan *models.TicketResponse
+	cashoutResponses map[string]chan *models.CashoutResponse
+	responseMu       sync.RWMutex
 	
 	// Idempotency: store sent messages and their responses
 	sentMessages map[string]*models.TicketResponse // Key: JSON hash of the message
@@ -87,8 +88,9 @@ func NewMTSService(cfg *config.Config) *MTSService {
 		cfg:          cfg,
 		wsURL:        wsURL,
 		wsAudience:   wsAudience,
-		responses:    make(map[string]chan *models.TicketResponse),
-		sentMessages: make(map[string]*models.TicketResponse),
+			responses:        make(map[string]chan *models.TicketResponse),
+			cashoutResponses: make(map[string]chan *models.CashoutResponse),
+			sentMessages:     make(map[string]*models.TicketResponse),
 		ctx:          ctx,
 		cancel:       cancel,
 		httpClient:   &http.Client{Timeout: 30 * time.Second},
@@ -493,9 +495,31 @@ func (s *MTSService) pingPump(connState *ConnectionState) {
 }
 
 func (s *MTSService) handleMessage(message []byte, connState *ConnectionState) {
+	// Try to determine message type by peeking at the operation field
+	var msgType struct {
+		Operation string `json:"operation"`
+		Content   struct {
+			Type string `json:"type"`
+		} `json:"content"`
+	}
+	if err := json.Unmarshal(message, &msgType); err != nil {
+		log.Printf("Failed to determine message type: %v. Message: %s", err, string(message))
+		return
+	}
+
+	// Decrement pending responses counter
+	atomic.AddInt32(&connState.pendingResponses, -1)
+
+	// Handle cashout-inform-reply
+	if msgType.Operation == "cashout-inform" && msgType.Content.Type == "cashout-inform-reply" {
+		s.handleCashoutResponse(message)
+		return
+	}
+
+	// Handle ticket responses
 	var response models.TicketResponse
 	if err := json.Unmarshal(message, &response); err != nil {
-		log.Printf("Failed to unmarshal response: %v. Message: %s", err, string(message))
+		log.Printf("Failed to unmarshal ticket response: %v. Message: %s", err, string(message))
 		return
 	}
 
@@ -506,9 +530,6 @@ func (s *MTSService) handleMessage(message []byte, connState *ConnectionState) {
 			response.OperatorID = 9985
 		}
 	}
-
-	// Decrement pending responses counter
-	atomic.AddInt32(&connState.pendingResponses, -1)
 
 	// Check if this is an error response
 	if response.Content.Type == "error-reply" {
@@ -616,6 +637,113 @@ func (s *MTSService) SendTicket(ticket *models.TicketRequest) (*models.TicketRes
 		atomic.AddInt32(&activeConn.pendingResponses, -1)
 		return nil, fmt.Errorf("service closed")
 	}
+}
+
+// SendCashout sends a cashout request to MTS and waits for the response
+func (s *MTSService) SendCashout(cashout *models.CashoutRequest) (*models.CashoutResponse, error) {
+	s.connMu.RLock()
+	activeConn := s.activeConn
+	s.connMu.RUnlock()
+
+	if activeConn == nil || atomic.LoadInt32(&s.connected) != 1 {
+		return nil, fmt.Errorf("not connected to MTS")
+	}
+
+	// Increment pending responses counter
+	atomic.AddInt32(&activeConn.pendingResponses, 1)
+
+	responseCh := make(chan *models.CashoutResponse, 1)
+	s.responseMu.Lock()
+	s.cashoutResponses[cashout.CorrelationID] = responseCh
+	s.responseMu.Unlock()
+
+	defer func() {
+		s.responseMu.Lock()
+		delete(s.cashoutResponses, cashout.CorrelationID)
+		s.responseMu.Unlock()
+		close(responseCh)
+	}()
+
+	if err := s.sendMessage(cashout); err != nil {
+		atomic.AddInt32(&activeConn.pendingResponses, -1)
+		return nil, fmt.Errorf("failed to send cashout: %w", err)
+	}
+
+	select {
+	case response := <-responseCh:
+		if response.Content.Type == "error-reply" {
+			return nil, fmt.Errorf("MTS returned an error reply. Check service logs for details. CorrelationID: %s", response.CorrelationID)
+		}
+		return response, nil
+	case <-time.After(10 * time.Second):
+		atomic.AddInt32(&activeConn.pendingResponses, -1)
+		return nil, fmt.Errorf("timeout waiting for cashout response")
+	case <-s.ctx.Done():
+		atomic.AddInt32(&activeConn.pendingResponses, -1)
+		return nil, fmt.Errorf("service closed")
+	}
+}
+
+// handleCashoutResponse handles cashout-inform-reply messages
+func (s *MTSService) handleCashoutResponse(message []byte) {
+	var response models.CashoutResponse
+	if err := json.Unmarshal(message, &response); err != nil {
+		log.Printf("Failed to unmarshal cashout response: %v. Message: %s", err, string(message))
+		return
+	}
+
+	// Fill in OperatorID if missing
+	if response.OperatorID == 0 {
+		response.OperatorID = s.cfg.OperatorID
+		if response.OperatorID == 0 {
+			response.OperatorID = 9985
+		}
+	}
+
+	// Log the response
+	log.Printf("Cashout response received (CorrelationID: %s): Status=%s, Code=%d", 
+		response.CorrelationID, response.Content.Status, response.Content.Code)
+
+	// Send ACK for cashout response
+	go s.sendCashoutAcknowledgement(&response)
+
+	// Deliver response to waiting channel
+	s.responseMu.RLock()
+	ch, ok := s.cashoutResponses[response.CorrelationID]
+	s.responseMu.RUnlock()
+
+	if ok {
+		select {
+		case ch <- &response:
+		case <-time.After(5 * time.Second):
+			log.Printf("Timeout delivering cashout response for correlation ID: %s", response.CorrelationID)
+		}
+	}
+}
+
+// sendCashoutAcknowledgement sends an acknowledgement for a cashout response
+func (s *MTSService) sendCashoutAcknowledgement(response *models.CashoutResponse) error {
+	operatorID := s.cfg.OperatorID
+	if operatorID == 0 {
+		log.Println("Warning: OperatorID is not set in config. Using default 9985 for cashout ACK.")
+		operatorID = 9985
+	}
+
+	ack := models.CashoutAck{
+		OperatorID:    operatorID,
+		CorrelationID: response.CorrelationID,
+		TimestampUTC:  time.Now().UnixMilli(),
+		Operation:     "cashout-inform-ack",
+		Version:       "3.0",
+		Content: models.CashoutAckContent{
+			Type:              "cashout-inform-ack",
+			CashoutID:         response.Content.CashoutID,
+			CashoutSignature:  response.Content.Signature,
+			Acknowledged:      true,
+		},
+	}
+
+	return s.sendMessage(&ack)
 }
 
 func (s *MTSService) sendMessage(msg interface{}) error {

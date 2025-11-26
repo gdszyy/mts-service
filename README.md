@@ -1,301 +1,376 @@
 # MTS Service
 
-A microservice for integrating with Sportradar's Managed Trading Services (MTS) for ticket placement.
+A comprehensive microservice for integrating with Sportradar's Managed Trading Services (MTS) for sports betting ticket placement.
 
-## Features
+## 🎯 Features
 
-- ✅ REST API for ticket placement
-- ✅ WebSocket connection to MTS
-- ✅ OAuth 2.0 authentication
-- ✅ Automatic reconnection
-- ✅ Health check endpoint
-- ✅ Ready for Railway deployment
+### Core Features
+- ✅ **Complete REST API** for all bet types (single, accumulator, system, banker, presets)
+- ✅ **WebSocket connection** to MTS with automatic reconnection
+- ✅ **OAuth 2.0 authentication** with token refresh
+- ✅ **Cashout support** (full and partial)
+- ✅ **Health check** endpoint
+- ✅ **Production-ready** with comprehensive error handling
 
-## Environment Variables
+### Supported Bet Types (14 Total)
+- ✅ Single Bet
+- ✅ Accumulator (Parlay)
+- ✅ System Bet (custom combinations)
+- ✅ Banker System Bet
+- ✅ **10 Preset System Bets**:
+  - Trixie, Patent, Yankee, Lucky 15, Lucky 31, Lucky 63
+  - Super Yankee, Heinz, Super Heinz, Goliath
+
+### API Features
+- 🔄 **7 dedicated endpoints** for different bet types
+- 📝 **Comprehensive validation** with detailed error messages
+- 📊 **Structured logging** for debugging and monitoring
+- 🧪 **Test scripts** for automated testing
+- 📚 **Extensive documentation** with examples
+
+## 📦 Quick Start
+
+### Environment Variables
 
 Required environment variables:
 
 ```bash
+# MTS Credentials
 MTS_CLIENT_ID=your_client_id
 MTS_CLIENT_SECRET=your_client_secret
-MTS_BOOKMAKER_ID=your_bookmaker_id # Optional if UOF_ACCESS_TOKEN is provided
-MTS_VIRTUAL_HOST=mts-api-ci.betradar.com # Optional if UOF_ACCESS_TOKEN is provided
-UOF_API_BASE_URL=https://global.api.betradar.com # Optional: Base URL for whoami.xml (e.g., https://stgapi.betradar.com)
-UOF_ACCESS_TOKEN=your_uof_token # Optional: Auto-fetch Bookmaker ID from whoami.xml
+
+# Bookmaker Configuration (Option 1: Direct)
+MTS_BOOKMAKER_ID=your_bookmaker_id
+MTS_VIRTUAL_HOST=mts-api-ci.betradar.com
+
+# Bookmaker Configuration (Option 2: Auto-fetch)
+UOF_ACCESS_TOKEN=your_uof_token
+UOF_API_BASE_URL=https://global.api.betradar.com
+
+# Environment
 MTS_PRODUCTION=false  # Set to true for production
 PORT=8080  # Optional, defaults to 8080
 ```
 
 **Note**: You can either:
-- Provide `MTS_BOOKMAKER_ID` directly, OR
-- Provide `UOF_ACCESS_TOKEN` to auto-fetch the Bookmaker ID and VirtualHost from `whoami.xml` (requires `UOF_API_BASE_URL`)
+- Provide `MTS_BOOKMAKER_ID` and `MTS_VIRTUAL_HOST` directly, OR
+- Provide `UOF_ACCESS_TOKEN` to auto-fetch them from `whoami.xml`
 
-## API Endpoints
-
-### Health Check
-
-```
-GET /health
-```
-
-Response:
-```json
-{
-  "status": "healthy",
-  "timestamp": 1698412800,
-  "service": "mts-service"
-}
-```
-
-### Place Ticket
-
-```
-POST /api/tickets
-Content-Type: application/json
-```
-
-Request body:
-```json
-{
-  "ticketId": "TICKET_123",
-  "customerId": "customer_456",
-  "currency": "EUR",
-  "totalStake": 1000,
-  "testSource": true,
-  "oddsChange": "any",
-  "bets": [
-    {
-      "id": "bet_1",
-      "stake": 1000,
-      "customBet": false,
-      "selections": [
-        {
-          "id": "selection_1",
-          "eventId": "sr:match:12345678",
-          "odds": 20000,
-          "banker": false
-        }
-      ]
-    }
-  ]
-}
-```
-
-Response (accepted):
-```json
-{
-  "operation": "ticket-placement-response",
-  "content": {
-    "type": "ticket-response",
-    "ticketId": "TICKET_123",
-    "status": "accepted",
-    "signature": "...",
-    "betDetails": [...]
-  },
-  "correlationId": "...",
-  "timestampUtc": 1698412800000,
-  "version": "2.4"
-}
-```
-
-Response (rejected):
-```json
-{
-  "operation": "ticket-placement-response",
-  "content": {
-    "type": "ticket-response",
-    "ticketId": "TICKET_123",
-    "status": "rejected",
-    "reason": {
-      "code": 1001,
-      "message": "Stake exceeds limit"
-    },
-    "betDetails": [...]
-  },
-  "correlationId": "...",
-  "timestampUtc": 1698412800000,
-  "version": "2.4"
-}
-```
-
-## Field Descriptions
-
-### Stake and Odds Format
-
-- **Stake**: Amount in cents (e.g., `1000` = 10.00 EUR)
-- **Odds**: Odds in 1/10000 format (e.g., `20000` = 2.0000)
-
-### Odds Change Strategies
-
-- `none`: Reject any odds changes
-- `higher`: Accept only higher odds
-- `any`: Accept any odds changes
-
-### Bet Types
-
-- **Single Bet**: One selection in a bet
-- **Accumulator**: Multiple selections in a bet (all must win)
-- **Custom Bet**: Same-game parlay (set `customBet: true`)
-
-## Local Development
-
-### Prerequisites
-
-- Go 1.24+
-- Sportradar MTS credentials
-
-### Run Locally
+### Installation
 
 ```bash
-# Set environment variables
-export MTS_CLIENT_ID=your_client_id
-export MTS_CLIENT_SECRET=your_client_secret
-export MTS_BOOKMAKER_ID=your_bookmaker_id # Get from whoami.xml or Sportradar support
-export MTS_VIRTUAL_HOST=mts-api-ci.betradar.com # Get from whoami.xml or Sportradar support
-export UOF_API_BASE_URL=https://global.api.betradar.com # UOF API Base URL (e.g., https://stgapi.betradar.com)
-export MTS_PRODUCTION=false
+# Clone the repository
+git clone https://github.com/gdszyy/mts-service.git
+cd mts-service
+
+# Install dependencies
+go mod download
 
 # Run the service
-go run cmd/server/main.go
+go run cmd/server/mts_main.go
 ```
 
-### Build
+### Docker (Optional)
 
 ```bash
-go build -o mts-service ./cmd/server
-./mts-service
+# Build Docker image
+docker build -t mts-service .
+
+# Run container
+docker run -p 8080:8080 \
+  -e MTS_CLIENT_ID=your_client_id \
+  -e MTS_CLIENT_SECRET=your_client_secret \
+  -e UOF_ACCESS_TOKEN=your_token \
+  mts-service
 ```
 
-## Railway Deployment
+## 🚀 API Endpoints
 
-### Deploy to Railway
+### Overview
 
-1. Push this repository to GitHub
-2. Connect Railway to your GitHub repository
-3. Set environment variables in Railway dashboard:
-   - `MTS_CLIENT_ID`
-   - `MTS_CLIENT_SECRET`
-   - `MTS_BOOKMAKER_ID`
-- `MTS_VIRTUAL_HOST`
-- `UOF_API_BASE_URL`
-   - `MTS_PRODUCTION`
-4. Railway will automatically detect the Dockerfile and deploy
+| Endpoint | Method | Description |
+|:---|:---:|:---|
+| `/health` | GET | Health check |
+| `/api/bets/single` | POST | Place single bet |
+| `/api/bets/accumulator` | POST | Place accumulator bet |
+| `/api/bets/system` | POST | Place system bet |
+| `/api/bets/banker-system` | POST | Place banker system bet |
+| `/api/bets/preset` | POST | Place preset system bet |
+| `/api/bets/multi` | POST | Place multi-bet ticket |
+| `/api/cashout` | POST | Request cashout |
 
-### Railway Configuration
+### Quick Examples
 
-Railway will automatically:
-- Detect the Dockerfile
-- Build the Docker image
-- Deploy the service
-- Assign a public URL
-- Set PORT environment variable
-
-## Testing
-
-### Example cURL Request
+#### Single Bet
 
 ```bash
-curl -X POST http://localhost:8080/api/tickets \
+curl -X POST http://localhost:8080/api/bets/single \
   -H "Content-Type: application/json" \
   -d '{
-    "ticketId": "TICKET_'$(date +%s)'",
-    "customerId": "customer_123",
-    "currency": "EUR",
-    "totalStake": 1000,
-    "testSource": true,
-    "oddsChange": "any",
-    "bets": [
-      {
-        "id": "bet_1",
-        "stake": 1000,
-        "customBet": false,
-        "selections": [
-          {
-            "id": "selection_1",
-            "eventId": "sr:match:12345678",
-            "odds": 20000,
-            "banker": false
-          }
-        ]
-      }
-    ]
+    "ticketId": "single-001",
+    "selection": {
+      "productId": "3",
+      "eventId": "sr:match:12345",
+      "marketId": "1",
+      "outcomeId": "1",
+      "odds": 2.50
+    },
+    "stake": {
+      "type": "cash",
+      "currency": "EUR",
+      "amount": 10.00,
+      "mode": "total"
+    }
   }'
 ```
 
-## Architecture
+#### Trixie Bet
 
-```
-┌─────────────┐
-│   Client    │
-└──────┬──────┘
-       │ HTTP
-       ↓
-┌─────────────┐
-│  REST API   │
-│  (Gin/HTTP) │
-└──────┬──────┘
-       │
-       ↓
-┌─────────────┐
-│ MTS Service │
-│ (WebSocket) │
-└──────┬──────┘
-       │ WSS
-       ↓
-┌─────────────┐
-│ Sportradar  │
-│     MTS     │
-└─────────────┘
+```bash
+curl -X POST http://localhost:8080/api/bets/preset \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ticketId": "trixie-001",
+    "type": "trixie",
+    "selections": [
+      {"productId": "3", "eventId": "sr:match:12345", "marketId": "1", "outcomeId": "1", "odds": 2.50},
+      {"productId": "3", "eventId": "sr:match:12346", "marketId": "1", "outcomeId": "2", "odds": 1.80},
+      {"productId": "3", "eventId": "sr:match:12347", "marketId": "1", "outcomeId": "1", "odds": 3.00}
+    ],
+    "stake": {
+      "type": "cash",
+      "currency": "EUR",
+      "amount": 1.00,
+      "mode": "unit"
+    }
+  }'
 ```
 
-## Project Structure
+For more examples, see [EXAMPLES.md](EXAMPLES.md).
+
+## 📚 Documentation
+
+- **[API Documentation](API_DOCUMENTATION.md)** - Complete API reference with all endpoints
+- **[Examples](EXAMPLES.md)** - Practical examples in cURL, Python, and JavaScript
+- **[Implementation Summary](IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
+
+## 🧪 Testing
+
+### Automated Test Script
+
+```bash
+# Run all API tests
+./scripts/test_api.sh
+
+# Test against custom URL
+BASE_URL=http://your-server:8080 ./scripts/test_api.sh
+```
+
+### Manual Testing
+
+```bash
+# Health check
+curl http://localhost:8080/health
+
+# Get API documentation
+curl http://localhost:8080/
+```
+
+## 🏗️ Architecture
+
+### Project Structure
 
 ```
 mts-service/
 ├── cmd/
 │   └── server/
-│       └── main.go          # Entry point
+│       └── mts_main.go          # Main entry point
 ├── internal/
 │   ├── api/
-│   │   └── handlers.go      # HTTP handlers
+│   │   ├── bet_handlers.go      # Bet endpoint handlers
+│   │   ├── cashout_handlers.go  # Cashout handler
+│   │   ├── helpers.go           # Validation & conversion
+│   │   ├── logging.go           # Logging utilities
+│   │   └── request_models.go    # API request/response models
 │   ├── config/
-│   │   └── config.go        # Configuration
+│   │   └── config.go            # Configuration management
 │   ├── models/
-│   │   └── ticket.go        # Data models
+│   │   ├── ticket.go            # MTS ticket models
+│   │   ├── cashout.go           # Cashout models
+│   │   └── ticket_builder.go    # Ticket builder
 │   └── service/
-│       └── mts.go           # MTS WebSocket client
-├── Dockerfile               # Docker configuration
-├── go.mod                   # Go dependencies
-├── go.sum
-└── README.md
+│       └── mts.go               # MTS WebSocket service
+├── scripts/
+│   └── test_api.sh              # Test script
+├── API_DOCUMENTATION.md         # API docs
+├── EXAMPLES.md                  # Usage examples
+└── README.md                    # This file
 ```
 
-## Error Handling
+### Data Flow
 
-The service handles various error scenarios:
+```
+Client Request
+    ↓
+API Handler (validation)
+    ↓
+TicketBuilder (construct MTS request)
+    ↓
+MTSService (WebSocket)
+    ↓
+MTS Platform
+    ↓
+Response (ticket-reply)
+    ↓
+Acknowledgement (ticket-ack)
+    ↓
+Client Response
+```
 
-- **Connection errors**: Automatic reconnection with exponential backoff
-- **Authentication errors**: Token refresh before expiry
-- **Validation errors**: Clear error messages in API responses
-- **Timeout errors**: 10-second timeout for MTS responses
+## 🔧 Configuration
 
-## Monitoring
+### Limit ID
 
-Monitor the following metrics:
+The service supports configuring a `LIMIT_ID` for risk management:
 
-- Health check status (`/health`)
-- Connection status (in health check response)
-- API response times
-- Error rates
+```bash
+MTS_LIMIT_ID=4268
+```
 
-## Support
+This will be included in all ticket requests sent to MTS.
 
-For issues or questions:
-- Sportradar Support: support@betradar.com
-- Sportradar Sales: sales@betradar.com
-- Documentation: https://docs.sportradar.com/transaction30api/
+### Production Mode
 
-## License
+For production deployment:
 
-Proprietary - Sportradar MTS Integration
+```bash
+MTS_PRODUCTION=true
+MTS_VIRTUAL_HOST=mts-api.betradar.com  # Production endpoint
+```
 
+## 📊 Response Format
+
+All API endpoints return a standardized response:
+
+### Success Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "content": {
+      "type": "ticket-reply",
+      "ticketId": "single-001",
+      "status": "accepted",
+      "signature": "...",
+      "betDetails": [...]
+    },
+    "correlationId": "corr-123456789",
+    "timestampUtc": 1732612345000,
+    "operation": "ticket-placement",
+    "version": "3.0"
+  }
+}
+```
+
+### Error Response
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": 400,
+    "message": "Validation failed",
+    "details": "ticketId is required"
+  }
+}
+```
+
+## 🛠️ Development
+
+### Prerequisites
+
+- Go 1.21 or higher
+- MTS credentials from Sportradar
+- Access to MTS test environment
+
+### Building
+
+```bash
+# Build binary
+go build -o mts-service cmd/server/mts_main.go
+
+# Run
+./mts-service
+```
+
+### Adding New Bet Types
+
+1. Add request model in `internal/api/request_models.go`
+2. Add validation in `internal/api/helpers.go`
+3. Add handler in `internal/api/bet_handlers.go`
+4. Add route in `cmd/server/mts_main.go`
+5. Update documentation
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Connection Failed**
+```
+Error: not connected to MTS
+```
+- Check MTS credentials
+- Verify network connectivity
+- Check MTS_VIRTUAL_HOST setting
+
+**Validation Error**
+```
+Error: ticketId is required
+```
+- Ensure all required fields are provided
+- Check field formats (odds, amounts, etc.)
+
+**MTS Rejection**
+```
+Status: rejected, Code: -401
+```
+- Event not found in MTS
+- Check event ID format
+- Verify event is available for betting
+
+### Logs
+
+The service provides detailed logging:
+
+```
+[2025-11-26 10:30:45] [SingleBet] Sending to MTS: TicketID=single-001
+[2025-11-26 10:30:46] [SingleBet] ✓ Ticket ACCEPTED: TicketID=single-001, Status=accepted
+```
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📞 Support
+
+For issues and questions:
+- GitHub Issues: https://github.com/gdszyy/mts-service/issues
+- Sportradar MTS Documentation: https://docs.betradar.com/display/BD/MTS+-+Transaction+3.0
+
+## 🔗 Related Resources
+
+- [Sportradar MTS Documentation](https://docs.betradar.com/display/BD/MTS+-+Transaction+3.0)
+- [Unified Odds Feed (UOF)](https://docs.betradar.com/display/BD/UOF+-+Unified+Odds+Feed)
+- [Betradar API](https://docs.betradar.com/)
+
+---
+
+**Version**: 2.0.0  
+**Last Updated**: 2025-11-26  
+**Author**: gdszyy
