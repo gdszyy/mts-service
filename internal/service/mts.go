@@ -379,7 +379,7 @@ func (s *MTSService) sendInitializationMessage() error {
 							EventID:    "sr:match:16470657",
 							MarketID:   "534",
 							OutcomeID:  "pre:outcometext:9919",
-							Odds: models.Odds{
+							Odds: &models.Odds{
 								Type:  "decimal",
 								Value: "2.10",
 							},

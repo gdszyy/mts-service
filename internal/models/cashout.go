@@ -52,6 +52,7 @@ type CashoutValidation struct {
 
 // CashoutResponse represents the response from MTS for cashout requests
 type CashoutResponse struct {
+	OperatorID    int64                  `json:"operatorId"`
 	Content       CashoutResponseContent `json:"content"`
 	CorrelationID string                 `json:"correlationId"`
 	TimestampUTC  int64                  `json:"timestampUtc"`
@@ -155,4 +156,22 @@ type CurrentResult struct {
 	Type           string `json:"type"` // "unsettled", "win", "lose", "void"
 	DeadHeatFactor string `json:"deadHeatFactor,omitempty"`
 	VoidFactor     string `json:"voidFactor,omitempty"`
+}
+
+// CashoutAck represents an acknowledgement for a cashout response
+type CashoutAck struct {
+	OperatorID    int64              `json:"operatorId"`
+	CorrelationID string             `json:"correlationId"`
+	TimestampUTC  int64              `json:"timestampUtc"`
+	Operation     string             `json:"operation"` // "cashout-inform-ack", "cashout-build-ack", or "cashout-placement-ack"
+	Version       string             `json:"version"`   // Should be "3.0"
+	Content       CashoutAckContent  `json:"content"`
+}
+
+// CashoutAckContent represents the content of a cashout acknowledgement
+type CashoutAckContent struct {
+	Type              string `json:"type"`              // "cashout-inform-ack", "cashout-build-ack", or "cashout-placement-ack"
+	CashoutID         string `json:"cashoutId"`         // Cashout ID from response
+	CashoutSignature  string `json:"cashoutSignature"`  // Signature from cashout response
+	Acknowledged      bool   `json:"acknowledged"`      // Should be true
 }
