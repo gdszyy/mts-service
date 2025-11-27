@@ -22,8 +22,8 @@ The tournament algorithm assigns a popularity score (1-10) to each league based 
 
 - **[event_popularity_algorithm.md](./event_popularity_algorithm.md)**: Event (match) popularity scoring specification
 - **[tournament_popularity_algorithm.md](./tournament_popularity_algorithm.md)**: Tournament (league) popularity scoring specification
-- **[league_popularity_algorithm.md](./league_popularity_algorithm.md)**: ⚠️ Deprecated - Use tournament_popularity_algorithm.md instead
 - **[popularity_analysis_report.md](./popularity_analysis_report.md)**: Comprehensive analysis report with execution results
+- **[why_no_tier_for_events.md](./why_no_tier_for_events.md)**: Explanation of why events use single-dimension scoring
 
 ## Implementation
 

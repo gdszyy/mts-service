@@ -10,8 +10,7 @@ This directory contains SQL scripts and Python utilities for the popularity scor
 ### Tournament Popularity Scoring
 - **`calculate_tournament_popularity.sql`**: Calculates and stores popularity scores for tournaments based on tier and market depth.
 
-### Legacy
-- **`calculate_league_popularity.sql`**: ⚠️ Deprecated - Use `calculate_tournament_popularity.sql` instead.
+
 
 ## Python Utilities
 
