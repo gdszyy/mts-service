@@ -222,7 +222,7 @@ func (h *Handler) buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequ
 					EventID:    selInput.EventID,
 					MarketID:   marketID,
 					OutcomeID:  selInput.OutcomeID,
-					Odds: models.Odds{
+					Odds: &models.Odds{
 						Type:  "decimal",
 						Value: selInput.Odds,
 					},
@@ -285,7 +285,7 @@ func (h *Handler) buildTicketRequest(req *PlaceTicketRequest) *models.TicketRequ
 					EventID:    selInput.EventID,
 					MarketID:   marketID,
 					OutcomeID:  selInput.OutcomeID,
-					Odds: models.Odds{
+					Odds: &models.Odds{
 						Type:  "decimal",
 						Value: selInput.Odds,
 					},
