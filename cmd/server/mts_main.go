@@ -76,23 +76,23 @@ func main() {
 	// Root endpoint with API documentation
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{
-				"service": "mts-service",
-				"version": "2.0.0",
-				"endpoints": {
-					"health": "/health",
-					"legacy": "/api/tickets",
-					"bets": {
-						"single": "/api/bets/single",
-						"accumulator": "/api/bets/accumulator",
-						"system": "/api/bets/system",
-						"banker_system": "/api/bets/banker-system",
-						"preset": "/api/bets/preset",
-						"multi": "/api/bets/multi"
-					},
-					"cashout": "/api/cashout"
-				}
-			}`)
+		w.Write([]byte(`{
+			"service": "mts-service",
+			"version": "2.0.0",
+			"endpoints": {
+				"health": "/health",
+				"legacy": "/api/tickets",
+				"bets": {
+					"single": "/api/bets/single",
+					"accumulator": "/api/bets/accumulator",
+					"system": "/api/bets/system",
+					"banker_system": "/api/bets/banker-system",
+					"preset": "/api/bets/preset",
+					"multi": "/api/bets/multi"
+				},
+				"cashout": "/api/cashout"
+			}
+		}`))
 	})
 
 	// Start HTTP server
