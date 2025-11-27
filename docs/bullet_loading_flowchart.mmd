@@ -1,0 +1,58 @@
+graph TD
+    Start([用户提交投注请求]) --> Build[阶段一: 构建 Build]
+    
+    Build --> BuildSteps{构建步骤}
+    BuildSteps --> B1[1. 收集用户输入<br/>selections, stake, type]
+    B1 --> B2[2. 选择构建器<br/>TicketBuilder]
+    B2 --> B3[3. 生成 TicketRequest 对象<br/>设置 ticketId, correlationId]
+    B3 --> Validate[阶段二: 验证 Validate]
+    
+    Validate --> ValidateSteps{验证步骤}
+    ValidateSteps --> V1[1. 结构验证<br/>必需字段检查]
+    V1 --> V2[2. 逻辑验证<br/>业务规则检查]
+    V2 --> V3[3. 格式验证<br/>ID 和赔率格式]
+    
+    V3 --> ValidResult{验证结果}
+    ValidResult -- 失败 --> Error1[返回错误给用户]
+    ValidResult -- 成功 --> Fire[阶段三: 发射 Fire]
+    
+    Fire --> FireSteps{发射步骤}
+    FireSteps --> F1[1. 序列化为 JSON]
+    F1 --> F2[2. 检查 WebSocket 连接]
+    F2 --> F3[3. 发送消息到 MTS]
+    F3 --> F4[4. 设置响应超时计时器]
+    
+    F4 --> Wait{等待 MTS 响应}
+    Wait -- 超时 --> Timeout[状态: 超时/未知]
+    Wait -- 收到响应 --> Confirm[阶段四: 确认 Confirm]
+    
+    Confirm --> ConfirmSteps{确认步骤}
+    ConfirmSteps --> C1[1. 接收 ticket-reply]
+    C1 --> C2[2. 解析 JSON 响应]
+    C2 --> C3{3. 检查 status 字段}
+    
+    C3 -- accepted --> Accepted[状态: 接受]
+    C3 -- rejected --> Rejected[状态: 拒绝<br/>分析 code 和 message]
+    
+    Accepted --> Ack1[4. 发送 ticket-ack<br/>acknowledged=true]
+    Rejected --> Ack2[4. 发送 ticket-ack<br/>acknowledged=true/false]
+    Timeout --> NoAck[无法发送 ACK]
+    
+    Ack1 --> Update[5. 更新本地数据库]
+    Ack2 --> Update
+    NoAck --> Update
+    
+    Update --> Return[6. 返回结果给用户]
+    Error1 --> End([流程结束])
+    Return --> End
+    
+    style Start fill:#e1f5e1
+    style Build fill:#fff4e6
+    style Validate fill:#e3f2fd
+    style Fire fill:#fce4ec
+    style Confirm fill:#f3e5f5
+    style End fill:#e1f5e1
+    style Accepted fill:#c8e6c9
+    style Rejected fill:#ffcdd2
+    style Timeout fill:#fff9c4
+    style Error1 fill:#ffcdd2
