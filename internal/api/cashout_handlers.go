@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gdsZyy/mts-service/internal/models"
@@ -87,8 +88,12 @@ func validateCashoutRequest(req *CashoutRequest) error {
 	
 	// Validate partial cashout
 	if req.Type == "ticket-partial" || req.Type == "bet-partial" {
-		if req.Percentage <= 0 || req.Percentage > 1 {
-			return fmt.Errorf("percentage must be between 0 and 1 for partial cashout")
+		if req.Percentage == "" {
+			return fmt.Errorf("percentage is required for partial cashout")
+		}
+		percentage, err := strconv.ParseFloat(req.Percentage, 64)
+		if err != nil || percentage <= 0 || percentage > 1 {
+			return fmt.Errorf("percentage must be a valid number between 0 and 1")
 		}
 	}
 	
@@ -106,8 +111,12 @@ func validateCashoutRequest(req *CashoutRequest) error {
 		if payout.Currency == "" {
 			return fmt.Errorf("payout[%d].currency is required", i)
 		}
-		if payout.Amount <= 0 {
-			return fmt.Errorf("payout[%d].amount must be greater than 0", i)
+		if payout.Amount == "" {
+			return fmt.Errorf("payout[%d].amount is required", i)
+		}
+		amount, err := strconv.ParseFloat(payout.Amount, 64)
+		if err != nil || amount <= 0 {
+			return fmt.Errorf("payout[%d].amount must be a valid number greater than 0", i)
 		}
 	}
 	
@@ -137,8 +146,8 @@ func buildCashoutRequest(req *CashoutRequest, operatorID int64) *models.CashoutR
 		Payout:          payouts,
 	}
 	
-	if req.Percentage > 0 {
-		detail.Percentage = fmt.Sprintf("%.2f", req.Percentage)
+	if req.Percentage != "" {
+		detail.Percentage = req.Percentage
 	}
 	
 	if req.BetID != "" {
