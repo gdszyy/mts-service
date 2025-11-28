@@ -231,10 +231,11 @@ func (s *MTSService) connect() error {
 
 	log.Println("Connected to MTS WebSocket")
 
-	// Send initialization message
-	if err := s.sendInitializationMessage(); err != nil {
-		return fmt.Errorf("failed to send initialization message: %w", err)
-	}
+	// NOTE: Initialization message sending is disabled to prevent rate limiting
+	// The service will only send messages when explicitly requested via API
+	// if err := s.sendInitializationMessage(); err != nil {
+	// 	return fmt.Errorf("failed to send initialization message: %w", err)
+	// }
 
 	return nil
 }
