@@ -196,8 +196,12 @@ func validateSelectionRequest(sel *SelectionRequest) error {
 	if sel.OutcomeID == "" {
 		return fmt.Errorf("outcomeId is required")
 	}
-	if sel.Odds <= 0 {
-		return fmt.Errorf("odds must be greater than 0")
+	if sel.Odds == "" {
+		return fmt.Errorf("odds is required")
+	}
+	// Validate odds is a valid number
+	if odds, err := strconv.ParseFloat(sel.Odds, 64); err != nil || odds <= 0 {
+		return fmt.Errorf("odds must be a valid number greater than 0")
 	}
 	return nil
 }
@@ -212,8 +216,12 @@ func validateStakeRequest(stake *StakeRequest) error {
 	if stake.Currency == "" {
 		return fmt.Errorf("currency is required")
 	}
-	if stake.Amount <= 0 {
-		return fmt.Errorf("amount must be greater than 0")
+	if stake.Amount == "" {
+		return fmt.Errorf("amount is required")
+	}
+	// Validate amount is a valid number
+	if amount, err := strconv.ParseFloat(stake.Amount, 64); err != nil || amount <= 0 {
+		return fmt.Errorf("amount must be a valid number greater than 0")
 	}
 	if stake.Mode == "" {
 		return fmt.Errorf("mode is required")
@@ -247,14 +255,29 @@ func convertStakeRequest(req StakeRequest) models.Stake {
 }
 
 func convertContextRequest(req *ContextRequest, cfg *config.Config) *models.Context {
-	channelType := req.ChannelType
-	if channelType == "" {
-		channelType = "internet"
-	}
+	var channel *models.Channel
 	
-	language := req.Language
-	if language == "" {
-		language = "EN"
+	if req.Channel != nil {
+		channelType := req.Channel.Type
+		if channelType == "" {
+			channelType = "internet"
+		}
+		
+		language := req.Channel.Lang
+		if language == "" {
+			language = "EN"
+		}
+		
+		channel = &models.Channel{
+			Type: channelType,
+			Lang: language,
+		}
+	} else {
+		// Default channel if not provided
+		channel = &models.Channel{
+			Type: "internet",
+			Lang: "EN",
+		}
 	}
 	
 	var limitID int64
@@ -263,10 +286,7 @@ func convertContextRequest(req *ContextRequest, cfg *config.Config) *models.Cont
 	}
 	
 	return &models.Context{
-		Channel: &models.Channel{
-			Type: channelType,
-			Lang: language,
-		},
+		Channel: channel,
 		IP:      req.IP,
 		LimitID: limitID,
 	}

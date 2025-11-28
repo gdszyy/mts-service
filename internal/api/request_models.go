@@ -8,7 +8,7 @@ type SelectionRequest struct {
 	EventID    string  `json:"eventId"`              // Event ID (e.g., "sr:match:12345")
 	MarketID   string  `json:"marketId"`             // Market ID (e.g., "1")
 	OutcomeID  string  `json:"outcomeId"`            // Outcome ID (e.g., "1712")
-	Odds       float64 `json:"odds"`                 // Odds as decimal (e.g., 2.50)
+	Odds       string  `json:"odds"`                 // Odds as string (e.g., "2.50")
 	Specifiers string  `json:"specifiers,omitempty"` // Optional specifiers (e.g., "hcp=1:0")
 }
 
@@ -16,15 +16,20 @@ type SelectionRequest struct {
 type StakeRequest struct {
 	Type     string  `json:"type"`     // "cash" or "free"
 	Currency string  `json:"currency"` // Currency code (e.g., "EUR", "USD")
-	Amount   float64 `json:"amount"`   // Amount as decimal
+	Amount   string  `json:"amount"`   // Amount as string (e.g., "10.00")
 	Mode     string  `json:"mode"`     // "total" or "unit"
+}
+
+// ChannelRequest represents channel information
+type ChannelRequest struct {
+	Type string `json:"type"` // "internet", "mobile", "agent"
+	Lang string `json:"lang"` // Language code (e.g., "EN")
 }
 
 // ContextRequest represents context information
 type ContextRequest struct {
-	ChannelType string `json:"channelType,omitempty"` // "internet", "mobile", "agent"
-	Language    string `json:"language,omitempty"`    // Language code (e.g., "EN")
-	IP          string `json:"ip,omitempty"`          // Customer IP address
+	Channel *ChannelRequest `json:"channel,omitempty"` // Channel information
+	IP      string          `json:"ip,omitempty"`      // Customer IP address
 }
 
 // SingleBetRequest represents a single bet request
@@ -94,7 +99,7 @@ type CashoutRequest struct {
 	TicketSignature string  `json:"ticketSignature"` // Signature from original ticket response
 	Type            string  `json:"type"`            // "ticket", "ticket-partial", "bet", "bet-partial"
 	Code            int     `json:"code"`            // Cashout reason code (e.g., 100, 101)
-	Percentage      float64 `json:"percentage,omitempty"` // For partial cashout (0.0-1.0)
+	Percentage      string  `json:"percentage,omitempty"` // For partial cashout (e.g., "0.5" for 50%)
 	BetID           string  `json:"betId,omitempty"`      // For bet-level cashout
 	Payout          []PayoutRequest `json:"payout"`  // Payout information
 }
@@ -103,7 +108,7 @@ type CashoutRequest struct {
 type PayoutRequest struct {
 	Type     string  `json:"type"`     // "cash" or "free"
 	Currency string  `json:"currency"` // Currency code
-	Amount   float64 `json:"amount"`   // Amount as decimal
+	Amount   string  `json:"amount"`   // Amount as string (e.g., "10.00")
 	Source   string  `json:"source,omitempty"` // "cashout" or "bonus"
 }
 

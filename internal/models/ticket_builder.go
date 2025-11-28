@@ -82,6 +82,11 @@ func (tb *TicketBuilder) AddSystemBet(size []int, selections []Selection, stake 
 }
 
 // AddBankerSystemBet adds a system bet with banker selections
+// This creates a proper MTS banker structure with nested system selections:
+// - Outer system: combines banker system and main system
+// - Banker system: type="system", size=[1], contains banker selections
+// - Main system: type="system", size=size, contains non-banker selections
+// 
 // bankers: selections that must be in every combination
 // size: array of combination sizes for non-banker selections
 // selections: non-banker selections to combine
@@ -101,17 +106,35 @@ func (tb *TicketBuilder) AddBankerSystemBet(bankers []Selection, size []int, sel
 		}
 	}
 	
-	systemSelection := Selection{
+	// Create banker system (size=[1] means all bankers must be included)
+	bankerSystem := Selection{
+		Type:       "system",
+		Size:       []int{1},
+		Selections: bankers,
+	}
+	
+	// Create main system for non-banker selections
+	mainSystem := Selection{
 		Type:       "system",
 		Size:       size,
 		Selections: selections,
 	}
 	
-	// Combine bankers and system selection
-	allSelections := append(bankers, systemSelection)
+	// Calculate outer system size: banker count + each size value
+	outerSize := make([]int, len(size))
+	for i, s := range size {
+		outerSize[i] = len(bankers) + s
+	}
+	
+	// Create outer system that combines banker and main systems
+	rootSystem := Selection{
+		Type:       "system",
+		Size:       outerSize,
+		Selections: []Selection{bankerSystem, mainSystem},
+	}
 	
 	bet := Bet{
-		Selections: allSelections,
+		Selections: []Selection{rootSystem},
 		Stake:      []Stake{stake},
 	}
 	tb.bets = append(tb.bets, bet)
@@ -220,10 +243,22 @@ func (tb *TicketBuilder) Build(correlationID string) *TicketRequest {
 }
 
 // NewSelection creates a new standard selection
-func NewSelection(productID, eventID, marketID, outcomeID string, odds float64, specifiers ...string) Selection {
+// odds can be either float64 or string
+func NewSelection(productID, eventID, marketID, outcomeID string, odds interface{}, specifiers ...string) Selection {
 	spec := ""
 	if len(specifiers) > 0 {
 		spec = specifiers[0]
+	}
+	
+	// Convert odds to string
+	var oddsStr string
+	switch v := odds.(type) {
+	case float64:
+		oddsStr = fmt.Sprintf("%.2f", v)
+	case string:
+		oddsStr = v
+	default:
+		panic(fmt.Sprintf("odds must be float64 or string, got %T", odds))
 	}
 	
 	return Selection{
@@ -235,17 +270,29 @@ func NewSelection(productID, eventID, marketID, outcomeID string, odds float64, 
 		Specifiers: spec,
 		Odds: &Odds{
 			Type:  "decimal",
-			Value: fmt.Sprintf("%.2f", odds),
+			Value: oddsStr,
 		},
 	}
 }
 
 // NewStake creates a new stake object
-func NewStake(stakeType, currency string, amount float64, mode string) Stake {
+// amount can be either float64 or string
+func NewStake(stakeType, currency string, amount interface{}, mode string) Stake {
+	// Convert amount to string
+	var amountStr string
+	switch v := amount.(type) {
+	case float64:
+		amountStr = fmt.Sprintf("%.2f", v)
+	case string:
+		amountStr = v
+	default:
+		panic(fmt.Sprintf("amount must be float64 or string, got %T", amount))
+	}
+	
 	return Stake{
 		Type:     stakeType,
 		Currency: currency,
-		Amount:   fmt.Sprintf("%.2f", amount),
+		Amount:   amountStr,
 		Mode:     mode,
 	}
 }
