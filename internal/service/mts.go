@@ -43,6 +43,9 @@ type ConnectionState struct {
 	isActive          bool // Whether this connection should accept new requests
 	pendingResponses  int32 // Number of requests awaiting responses on this connection
 	mu                sync.RWMutex
+	ctx               context.Context    // Context for graceful shutdown of goroutines
+	cancel            context.CancelFunc // Cancel function for the context
+	id                string             // Unique connection ID for debugging
 }
 
 type MTSService struct {
@@ -115,6 +118,8 @@ func (s *MTSService) Stop() error {
 	// Close active connection
 	s.connMu.Lock()
 	if s.activeConn != nil && s.activeConn.conn != nil {
+		log.Printf("Stopping service, closing active connection (ID: %s)", s.activeConn.id)
+		s.activeConn.cancel() // Cancel context
 		s.activeConn.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 		s.activeConn.conn.Close()
 		s.activeConn = nil
@@ -122,6 +127,8 @@ func (s *MTSService) Stop() error {
 	
 	// Close old connection if still exists
 	if s.oldConn != nil && s.oldConn.conn != nil {
+		log.Printf("Stopping service, closing old connection (ID: %s)", s.oldConn.id)
+		s.oldConn.cancel() // Cancel context
 		s.oldConn.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 		s.oldConn.conn.Close()
 		s.oldConn = nil
@@ -207,10 +214,19 @@ func (s *MTSService) connect() error {
 		return fmt.Errorf("failed to connect to WebSocket: %w", err)
 	}
 
+	// Create connection-level context
+	ctx, cancel := context.WithCancel(s.ctx)
+	
+	// Generate unique connection ID
+	connID := fmt.Sprintf("conn-%d", time.Now().UnixNano())
+
 	newConnState := &ConnectionState{
 		conn:        conn,
 		connectedAt: time.Now(),
 		isActive:    true,
+		ctx:         ctx,
+		cancel:      cancel,
+		id:          connID,
 	}
 
 	s.connMu.Lock()
@@ -229,7 +245,7 @@ func (s *MTSService) connect() error {
 	go s.readPump(newConnState)
 	go s.pingPump(newConnState)
 
-	log.Println("Connected to MTS WebSocket")
+	log.Printf("Connected to MTS WebSocket (ID: %s)", connID)
 
 	// NOTE: Initialization message sending is disabled to prevent rate limiting
 	// The service will only send messages when explicitly requested via API
@@ -273,6 +289,17 @@ func (s *MTSService) connectionRefreshMonitor() {
 func (s *MTSService) initiateConnectionRefresh() {
 	log.Println("Initiating smooth connection refresh (Option 1)...")
 
+	// Save current active connection before creating new one
+	s.connMu.Lock()
+	previousActiveConn := s.activeConn
+	previousConnID := ""
+	if previousActiveConn != nil {
+		previousConnID = previousActiveConn.id
+	}
+	s.connMu.Unlock()
+
+	log.Printf("Saving previous active connection (ID: %s) before creating new connection", previousConnID)
+
 	// Step 1: Open new connection
 	if err := s.connect(); err != nil {
 		log.Printf("Failed to open new connection during refresh: %v", err)
@@ -283,14 +310,18 @@ func (s *MTSService) initiateConnectionRefresh() {
 	s.connMu.Lock()
 	if s.oldConn != nil && s.oldConn.conn != nil {
 		// Close previous old connection if it still exists
+		oldConnID := s.oldConn.id
+		log.Printf("Closing previous old connection (ID: %s)", oldConnID)
+		s.oldConn.cancel() // Cancel context to stop goroutines
 		s.oldConn.conn.Close()
 	}
 	
-	// Move current active connection to old connection
-	s.oldConn = s.activeConn
+	// Use the previously saved connection
+	s.oldConn = previousActiveConn
 	if s.oldConn != nil {
 		s.oldConn.isActive = false
-		log.Printf("Old connection marked as inactive. Pending responses: %d", atomic.LoadInt32(&s.oldConn.pendingResponses))
+		log.Printf("Old connection (ID: %s) marked as inactive. Pending responses: %d", 
+			s.oldConn.id, atomic.LoadInt32(&s.oldConn.pendingResponses))
 	}
 	s.connMu.Unlock()
 
@@ -312,6 +343,8 @@ func (s *MTSService) drainOldConnection() {
 			// Service is shutting down
 			s.connMu.Lock()
 			if s.oldConn != nil && s.oldConn.conn != nil {
+				log.Printf("Service shutting down, closing old connection (ID: %s)", s.oldConn.id)
+				s.oldConn.cancel() // Cancel context
 				s.oldConn.conn.Close()
 				s.oldConn = nil
 			}
@@ -320,9 +353,10 @@ func (s *MTSService) drainOldConnection() {
 
 		case <-timeout.C:
 			// Timeout reached, force close old connection
-			log.Println("Graceful shutdown timeout reached, force closing old connection")
 			s.connMu.Lock()
 			if s.oldConn != nil && s.oldConn.conn != nil {
+				log.Printf("Graceful shutdown timeout reached, force closing old connection (ID: %s)", s.oldConn.id)
+				s.oldConn.cancel() // Cancel context
 				s.oldConn.conn.Close()
 				s.oldConn = nil
 			}
@@ -340,9 +374,10 @@ func (s *MTSService) drainOldConnection() {
 
 			pendingCount := atomic.LoadInt32(&oldConn.pendingResponses)
 			if pendingCount == 0 {
-				log.Println("All responses received on old connection, closing it")
+				log.Printf("All responses received on old connection (ID: %s), closing it", oldConn.id)
 				s.connMu.Lock()
 				if s.oldConn != nil && s.oldConn.conn != nil {
+					s.oldConn.cancel() // Cancel context to stop goroutines
 					s.oldConn.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 					s.oldConn.conn.Close()
 					s.oldConn = nil
@@ -435,9 +470,15 @@ func (s *MTSService) readPump(connState *ConnectionState) {
 		// Check if this was the active connection
 		s.connMu.RLock()
 		isActive := (s.activeConn == connState)
+		isOldConn := (s.oldConn == connState)
 		s.connMu.RUnlock()
 
-		if isActive {
+		log.Printf("readPump exiting for connection (ID: %s), isActive=%v, isOldConn=%v", 
+			connState.id, isActive, isOldConn)
+
+		// Only reconnect if this is the active connection and not being gracefully closed
+		if isActive && !isOldConn {
+			log.Printf("Active connection (ID: %s) closed unexpectedly, triggering reconnect", connState.id)
 			atomic.StoreInt32(&s.connected, 0)
 			s.reconnect()
 		}
@@ -446,6 +487,10 @@ func (s *MTSService) readPump(connState *ConnectionState) {
 	for {
 		select {
 		case <-s.ctx.Done():
+			log.Printf("readPump: service context cancelled for connection (ID: %s)", connState.id)
+			return
+		case <-connState.ctx.Done():
+			log.Printf("readPump: connection context cancelled for connection (ID: %s)", connState.id)
 			return
 		default:
 			connState.mu.RLock()
@@ -453,13 +498,14 @@ func (s *MTSService) readPump(connState *ConnectionState) {
 			connState.mu.RUnlock()
 
 			if conn == nil {
+				log.Printf("readPump: connection is nil for connection (ID: %s)", connState.id)
 				return
 			}
 
 			_, message, err := conn.ReadMessage()
 			if err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					log.Printf("WebSocket read error: %v", err)
+					log.Printf("WebSocket read error on connection (ID: %s): %v", connState.id, err)
 				}
 				return
 			}
@@ -476,19 +522,31 @@ func (s *MTSService) pingPump(connState *ConnectionState) {
 	for {
 		select {
 		case <-s.ctx.Done():
+			log.Printf("pingPump: service context cancelled for connection (ID: %s)", connState.id)
+			return
+		case <-connState.ctx.Done():
+			log.Printf("pingPump: connection context cancelled for connection (ID: %s)", connState.id)
 			return
 		case <-ticker.C:
 			connState.mu.RLock()
 			conn := connState.conn
+			isActive := connState.isActive
 			connState.mu.RUnlock()
 
 			if conn == nil {
-				continue
+				log.Printf("pingPump: connection is nil for connection (ID: %s)", connState.id)
+				return
+			}
+
+			// Check if connection is still active
+			if !isActive {
+				log.Printf("pingPump: connection (ID: %s) is no longer active, exiting", connState.id)
+				return
 			}
 
 			conn.SetWriteDeadline(time.Now().Add(WriteWait))
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				log.Printf("Failed to send ping: %v", err)
+				log.Printf("Failed to send ping on connection (ID: %s): %v", connState.id, err)
 				return
 			}
 		}
