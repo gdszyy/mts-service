@@ -146,13 +146,27 @@ curl -X POST http://localhost:8080/api/bets/preset \
   }'
 ```
 
-For more examples, see [EXAMPLES.md](EXAMPLES.md).
+For more examples, see [EXAMPLES.md](./docs/technical/EXAMPLES.md).
 
 ## 📚 Documentation
 
-- **[API Documentation](API_DOCUMENTATION.md)** - Complete API reference with all endpoints
-- **[Examples](EXAMPLES.md)** - Practical examples in cURL, Python, and JavaScript
-- **[Implementation Summary](IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
+### Product Documentation
+- **[Frontend Interaction Design](./docs/product/Frontend_Interaction_Design.md)** - Complete frontend interaction logic including single/multi-bet modes, beginner/expert modes, and exception handling
+- **[WebSocket Protocol](./docs/product/WebSocket_Protocol.md)** - Real-time betting communication protocol
+- **[Product Flowcharts](./docs/product/flowcharts/)** - All product design flowcharts in Mermaid format
+
+### Technical Documentation
+- **[API Documentation](./docs/technical/API_DOCUMENTATION.md)** - Complete API reference with all endpoints
+- **[Examples](./docs/technical/EXAMPLES.md)** - Practical examples in cURL, Python, and JavaScript
+- **[MTS Specification Analysis](./docs/technical/MTS_Specification_Analysis.md)** - Analysis of MTS 3.0 API specifications
+
+### Testing Documentation
+- **[Test Cases](./docs/testing/test_cases.md)** - Comprehensive test case definitions
+- **[Test Report](./docs/testing/final_test_report.md)** - Latest test execution report
+- **[Testing Summary](./docs/testing/TESTING_SUMMARY.md)** - Overview of testing approach and results
+
+### Deployment Documentation
+- **[Railway Deployment](./docs/deployment/RAILWAY_DEPLOYMENT.md)** - Guide for deploying to Railway platform
 
 ## 🧪 Testing
 

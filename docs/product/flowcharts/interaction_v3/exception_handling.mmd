@@ -1,0 +1,74 @@
+flowchart TD
+    Start([投注过程中]) --> MonitorEvents[监控各种事件和状态]
+    
+    MonitorEvents --> DetectEvent{检测到事件}
+    
+    DetectEvent -->|赔率变化| OddsChange[赔率变化事件]
+    DetectEvent -->|选项失效| SelectionInvalid[选项失效事件]
+    DetectEvent -->|余额不足| InsufficientBalance[余额不足事件]
+    DetectEvent -->|API错误| APIError[API 错误事件]
+    DetectEvent -->|网络问题| NetworkIssue[网络连接问题]
+    
+    OddsChange --> HighlightOdds[高亮显示变化的赔率<br/>红色闪烁或变色]
+    HighlightOdds --> CheckSetting{检查用户设置<br/>接受赔率变化方式}
+    
+    CheckSetting -->|不接受任何变化| ShowOddsConfirm[显示确认对话框<br/>赔率已变化，请确认]
+    CheckSetting -->|接受任何变化| AutoAccept[自动接受新赔率<br/>更新显示]
+    CheckSetting -->|只接受更高赔率| CheckDirection{赔率方向}
+    
+    CheckDirection -->|赔率提高| AutoAccept
+    CheckDirection -->|赔率降低| ShowOddsConfirm
+    
+    ShowOddsConfirm --> UserConfirm1{用户确认}
+    UserConfirm1 -->|确认| AcceptNewOdds[接受新赔率并继续]
+    UserConfirm1 -->|取消| RejectOdds[拒绝新赔率<br/>保持原投注单]
+    
+    SelectionInvalid --> MarkInvalid[将失效选项标记为灰色<br/>显示失效原因]
+    MarkInvalid --> RemoveSelection[自动从投注单移除失效选项]
+    RemoveSelection --> ShowNotification1[显示通知<br/>选项已失效并移除]
+    ShowNotification1 --> CheckRemaining{检查剩余选项}
+    CheckRemaining -->|有剩余| UpdateBetSlip1[更新投注单显示]
+    CheckRemaining -->|无剩余| ClearBetSlip[清空投注单<br/>显示提示]
+    
+    InsufficientBalance --> ShowBalanceError[在金额输入框下方<br/>显示红色错误<br/>余额不足]
+    ShowBalanceError --> DisableBetBtn[禁用投注按钮<br/>或显示为充值按钮]
+    DisableBetBtn --> WaitTopUp[等待用户充值或修改金额]
+    
+    APIError --> ParseError[解析错误信息<br/>从 API 响应中获取]
+    ParseError --> ShowErrorMsg[显示清晰的错误提示<br/>投注失败: 错误信息]
+    ShowErrorMsg --> CheckErrorType{错误类型}
+    CheckErrorType -->|临时错误| SuggestRetry[建议用户重试<br/>保留投注单内容]
+    CheckErrorType -->|业务逻辑错误| HighlightIssue[高亮显示问题所在<br/>保留投注单内容]
+    
+    NetworkIssue --> ShowGlobalWarning[在页面顶部显示警告条<br/>网络连接不稳定]
+    ShowGlobalWarning --> DisableAllBtns[禁用所有投注按钮]
+    DisableAllBtns --> MonitorNetwork[监控网络状态]
+    MonitorNetwork --> NetworkRecovered{网络恢复?}
+    NetworkRecovered -->|是| HideWarning[隐藏警告条<br/>启用投注按钮]
+    NetworkRecovered -->|否| MonitorNetwork
+    
+    AutoAccept --> End([继续投注流程])
+    AcceptNewOdds --> End
+    RejectOdds --> End
+    UpdateBetSlip1 --> End
+    ClearBetSlip --> End
+    WaitTopUp --> End
+    SuggestRetry --> End
+    HighlightIssue --> End
+    HideWarning --> End
+    
+    style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#F44336,stroke:#C62828,color:#fff
+    style OddsChange fill:#FF9800,stroke:#E65100,color:#fff
+    style SelectionInvalid fill:#FF9800,stroke:#E65100,color:#fff
+    style InsufficientBalance fill:#FF9800,stroke:#E65100,color:#fff
+    style APIError fill:#FF9800,stroke:#E65100,color:#fff
+    style NetworkIssue fill:#FF9800,stroke:#E65100,color:#fff
+    style ShowOddsConfirm fill:#E91E63,stroke:#880E4F,color:#fff
+    style ShowBalanceError fill:#F44336,stroke:#C62828,color:#fff
+    style ShowErrorMsg fill:#F44336,stroke:#C62828,color:#fff
+    style ShowGlobalWarning fill:#F44336,stroke:#C62828,color:#fff
+    style AutoAccept fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style CheckSetting fill:#FFC107,stroke:#F57C00,color:#000
+    style CheckDirection fill:#FFC107,stroke:#F57C00,color:#000
+    style UserConfirm1 fill:#FFC107,stroke:#F57C00,color:#000

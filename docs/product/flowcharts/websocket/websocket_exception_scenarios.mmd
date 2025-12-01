@@ -1,0 +1,69 @@
+sequenceDiagram
+    participant F as 前端 Frontend
+    participant W as WebSocket 服务
+    participant M as MTS Service
+    participant S as Sportradar MTS
+    
+    Note over F,S: 异常场景 1: 投注提交后赔率变化
+    
+    F->>W: 发送投注请求<br/>selection odds: 2.50
+    W-->>F: 确认接收<br/>ticketId: yyy
+    W->>M: 调用 API
+    M->>S: 发送 Ticket
+    
+    alt Sportradar 检测到赔率变化
+        S-->>M: 返回 rejected<br/>reason: odds_changed<br/>new_odds: 2.30
+        M-->>W: 投注被拒<br/>原因: 赔率变化
+        W-->>F: 推送结果<br/>type: bet_result<br/>status: rejected<br/>reason: odds_changed<br/>old_odds: 2.50<br/>new_odds: 2.30
+        
+        F->>F: 检查用户设置
+        alt 用户设置: 接受任何赔率变化
+            F->>F: 自动更新赔率为 2.30
+            F->>W: 重新提交投注<br/>新 requestId
+        else 用户设置: 不接受赔率变化
+            F->>F: 高亮显示赔率变化<br/>显示确认对话框
+            F->>F: 等待用户手动确认
+        end
+    end
+    
+    Note over F,S: 异常场景 2: 投注提交超时
+    
+    F->>W: 发送投注请求
+    W-->>F: 确认接收
+    W->>M: 调用 API
+    M->>S: 发送 Ticket
+    
+    Note over M,S: 网络延迟或 MTS 响应慢
+    
+    alt 超过 15 秒未收到响应
+        M->>M: 检测超时
+        M-->>W: 返回超时状态<br/>status: timeout
+        W-->>F: 推送超时通知<br/>type: bet_timeout<br/>requestId: xxx<br/>ticketId: yyy
+        F->>F: 显示提示: 投注处理中，请稍后查看投注记录
+        
+        Note over M,S: 后台继续等待 MTS 响应
+        
+        S-->>M: 延迟返回结果
+        M-->>W: 推送延迟结果
+        W-->>F: 推送结果<br/>type: bet_result_delayed<br/>ticketId: yyy<br/>status: accepted/rejected
+        F->>F: 显示通知: 您的投注已处理
+    end
+    
+    Note over F,S: 异常场景 3: WebSocket 连接断开
+    
+    F->>W: 发送投注请求
+    W-->>F: 确认接收<br/>ticketId: yyy
+    W->>M: 调用 API
+    
+    Note over F,W: WebSocket 连接意外断开
+    
+    F->>F: 检测到连接断开
+    F->>F: 尝试重连
+    F->>W: 重新建立连接
+    W-->>F: 连接成功
+    
+    F->>W: 查询投注状态<br/>type: query_bet_status<br/>ticketId: yyy
+    W->>M: 查询 Ticket 状态
+    M-->>W: 返回状态
+    W-->>F: 推送状态<br/>type: bet_status<br/>ticketId: yyy<br/>status: accepted/rejected/pending
+    F->>F: 根据状态更新 UI
