@@ -39,7 +39,7 @@ _## 3. 专家级功能增强 (v4 新增)_
 
 当用户在同一场比赛中选择了互斥的选项时（例如，同时选择主队胜和平局），系统将根据用户模式采取不同策略。
 
-![互斥选项处理流程](flowcharts_v4/user_mode_conflict_handling.png)
+![互斥选项处理流程](flowcharts_v4/user_mode_conflict_handling.mmd)
 
 **图 1：互斥选项处理流程图**
 
@@ -56,7 +56,7 @@ _## 3. 专家级功能增强 (v4 新增)_
 
 当投注单中出现锁定的盘口、失效的选项或互斥的串关时，系统将根据用户模式提供不同的清理机制。
 
-![智能异常选项处理流程](flowcharts_v4/smart_exception_handling.png)
+![智能异常选项处理流程](flowcharts_v4/smart_exception_handling.mmd)
 
 **图 2：智能异常选项处理流程图**
 
@@ -74,7 +74,7 @@ _## 3. 专家级功能增强 (v4 新增)_
 
 为了进一步提升高频用户的投注效率，我们在快捷金额选项中新增了 **“Last” (上次)** 按钮。
 
-![“使用上次金额”功能流程](flowcharts_v4/last_amount_feature.png)
+![“使用上次金额”功能流程](flowcharts_v4/last_amount_feature.mmd)
 
 **图 3：“使用上次金额”功能流程图**
 

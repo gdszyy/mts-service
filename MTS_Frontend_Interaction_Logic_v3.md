@@ -19,7 +19,7 @@
 -   **单关模式**: 允许用户为多个选项独立输入金额，实现一次性批量提交多个单注。
 -   **串关模式**: 将所有选项聚合，提供“串关”、“系统”和“Banker”三种复杂的组合投注方式。
 
-![投注单核心交互流程 v2](flowcharts_v2/bet_slip_core_flow_v2.png)
+![投注单核心交互流程 v2](flowcharts_v2/bet_slip_core_flow_v2.mmd)
 
 **图 1：投注单核心交互流程图 (v2)**
 
@@ -33,7 +33,7 @@
 
 -   **核心原则**：**清空并确认**。在不同模式（或串关模式内的不同子模式）之间切换时，由于金额的计算基础（独立金额 vs. 总金额 vs. 单位金额）完全不同，系统应清空已输入的金额，并弹窗提示用户，以避免逻辑混乱。
 
-![模式切换金额处理流程](flowcharts_v3/mode_switch_amount_handling.png)
+![模式切换金额处理流程](flowcharts_v3/mode_switch_amount_handling.mmd)
 
 **图 2：模式切换金额处理流程图**
 
@@ -52,7 +52,7 @@
 -   **预设值**: 例如 `+5`, `+10`, `+20`, `+50`, `+100`, `Max`。
 -   **交互**: 点击 `+X` 按钮可累加金额；点击 `Max` 按钮可一键填充最大可用额度。
 
-![快捷金额交互流程](flowcharts_v3/quick_amount_interaction.png)
+![快捷金额交互流程](flowcharts_v3/quick_amount_interaction.mmd)
 
 **图 3：快捷金额交互流程图**
 
@@ -60,7 +60,7 @@
 
 一个独立的“设置页面”将赋予用户根据个人偏好深度定制投注体验的能力。
 
-![设置页面结构](flowcharts_v3/settings_page_structure.png)
+![设置页面结构](flowcharts_v3/settings_page_structure.mmd)
 
 **图 4：设置页面结构图**
 
@@ -78,7 +78,7 @@
 
 清晰、及时的异常处理是建立用户信任和提供流畅体验的基石。我们必须对各种可能出现的异常情况进行周全的设计。
 
-![异常情况处理流程](flowcharts_v3/exception_handling.png)
+![异常情况处理流程](flowcharts_v3/exception_handling.mmd)
 
 **图 5：异常情况处理流程图**
 

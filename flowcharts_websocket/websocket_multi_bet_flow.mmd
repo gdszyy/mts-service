@@ -1,0 +1,39 @@
+sequenceDiagram
+    participant F as 前端 Frontend
+    participant W as WebSocket 服务
+    participant M as MTS Service
+    participant S as Sportradar MTS
+    
+    Note over F,S: 场景：用户提交串关投注（Accumulator/System/Banker）
+    
+    F->>F: 用户在串关模式下点击"下单"
+    F->>F: 生成唯一 requestId
+    F->>W: 发送投注请求<br/>type: place_bet<br/>requestId: xxx<br/>betType: accumulator/system/banker<br/>payload: {...}
+    
+    W->>W: 验证请求格式和选项有效性
+    alt 验证失败
+        W-->>F: 返回错误<br/>type: bet_error<br/>requestId: xxx<br/>error: {...}
+        F->>F: 显示错误提示
+    else 验证成功
+        W-->>F: 确认接收<br/>type: bet_received<br/>requestId: xxx<br/>ticketId: yyy
+        F->>F: 显示"投注处理中..."<br/>禁用下单按钮<br/>显示加载动画
+        
+        W->>M: 调用对应 API<br/>POST /api/bets/accumulator<br/>POST /api/bets/system<br/>POST /api/bets/banker-system
+        M->>M: 构建复杂 MTS Ticket<br/>处理多个 selections
+        M->>S: 发送 Ticket 到 Sportradar
+        
+        Note over M,S: MTS 处理延迟（串关通常 3-8 秒）
+        
+        S-->>M: 返回 Ticket Response
+        M->>M: 解析响应结果<br/>提取详细信息
+        
+        alt MTS 接受投注
+            M-->>W: 投注成功<br/>ticketId: yyy<br/>status: accepted<br/>totalOdds: xxx<br/>potentialPayout: xxx
+            W-->>F: 推送结果<br/>type: bet_result<br/>requestId: xxx<br/>ticketId: yyy<br/>status: accepted<br/>details: {...}
+            F->>F: 显示成功提示<br/>展示投注详情<br/>清空投注单<br/>更新余额
+        else MTS 拒绝投注
+            M-->>W: 投注被拒<br/>ticketId: yyy<br/>status: rejected<br/>reason: {...}
+            W-->>F: 推送结果<br/>type: bet_result<br/>requestId: xxx<br/>ticketId: yyy<br/>status: rejected<br/>reason: {...}
+            F->>F: 显示拒绝原因<br/>高亮问题选项<br/>保留投注单<br/>启用下单按钮
+        end
+    end

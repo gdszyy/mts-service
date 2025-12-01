@@ -14,7 +14,7 @@
 
 与之前版本最大的不同在于，新版投注单的顶部应提供一个清晰、醒目的模式切换器（例如，Toggle Switch 或标签页），允许用户在 **“单关”** 和 **“串关”** 两种模式之间自由切换。这个选择将从根本上改变投注单的行为和最终的 API 请求结构，为专业用户提供更强大的投注灵活性。
 
-![投注单核心交互流程 v2](flowcharts_v2/bet_slip_core_flow_v2.png)
+![投注单核心交互流程 v2](flowcharts_v2/bet_slip_core_flow_v2.mmd)
 
 **图 1：投注单核心交互流程图 (v2)**
 
@@ -38,7 +38,7 @@
     -   请求体中的 `bets` 数组将包含多个 `BetDefinition` 对象。
     -   每个 `BetDefinition` 的 `type` 都将被设置为 `"single"`，并包含各自的 `selection` 和 `stake`。
 
-![单关模式流程图](flowcharts_v2/single_mode_flow.png)
+![单关模式流程图](flowcharts_v2/single_mode_flow.mmd)
 
 **图 2：单关模式流程图**
 
@@ -54,7 +54,7 @@
         -   **系统 (System)**: 当选项 ≥ 3 个时可用，显示所有可能的系统组合（如二串一、三串一、Yankee 等）。
         -   **Banker**: 在“系统”视图内提供，允许用户将某些选项设为“胆”。
 
-![串关模式流程图](flowcharts_v2/multi_mode_flow.png)
+![串关模式流程图](flowcharts_v2/multi_mode_flow.mmd)
 
 **图 3：串关模式（及子场景）流程图**
 

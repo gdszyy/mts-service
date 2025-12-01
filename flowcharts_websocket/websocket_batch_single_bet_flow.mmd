@@ -1,0 +1,47 @@
+sequenceDiagram
+    participant F as 前端 Frontend
+    participant W as WebSocket 服务
+    participant M as MTS Service
+    participant S as Sportradar MTS
+    
+    Note over F,S: 场景：用户在单关模式下批量提交多个单注
+    
+    F->>F: 用户为 3 个选项输入金额<br/>点击"下单"按钮
+    F->>F: 生成唯一 requestId<br/>生成 3 个子 betId
+    F->>W: 发送批量投注请求<br/>type: place_bet<br/>requestId: xxx<br/>betType: multi<br/>bets: [bet1, bet2, bet3]
+    
+    W->>W: 验证请求格式
+    alt 验证失败
+        W-->>F: 返回错误<br/>type: bet_error<br/>requestId: xxx<br/>error: {...}
+        F->>F: 显示错误提示
+    else 验证成功
+        W-->>F: 确认接收<br/>type: bet_received<br/>requestId: xxx<br/>ticketIds: [yyy1, yyy2, yyy3]
+        F->>F: 显示"投注处理中..."<br/>显示进度: 0/3
+        
+        W->>M: 调用 POST /api/bets/multi<br/>包含 3 个 BetDefinition
+        M->>M: 构建 3 个独立 MTS Tickets
+        
+        par 并行处理
+            M->>S: 发送 Ticket 1
+            S-->>M: 返回 Response 1
+            M-->>W: 推送部分结果<br/>ticketId: yyy1<br/>status: accepted/rejected
+            W-->>F: 推送进度<br/>type: bet_partial_result<br/>requestId: xxx<br/>completed: 1/3<br/>result: {...}
+            F->>F: 更新进度: 1/3
+        and
+            M->>S: 发送 Ticket 2
+            S-->>M: 返回 Response 2
+            M-->>W: 推送部分结果<br/>ticketId: yyy2<br/>status: accepted/rejected
+            W-->>F: 推送进度<br/>type: bet_partial_result<br/>requestId: xxx<br/>completed: 2/3<br/>result: {...}
+            F->>F: 更新进度: 2/3
+        and
+            M->>S: 发送 Ticket 3
+            S-->>M: 返回 Response 3
+            M-->>W: 推送部分结果<br/>ticketId: yyy3<br/>status: accepted/rejected
+            W-->>F: 推送进度<br/>type: bet_partial_result<br/>requestId: xxx<br/>completed: 3/3<br/>result: {...}
+            F->>F: 更新进度: 3/3
+        end
+        
+        M-->>W: 所有投注完成<br/>summary: {...}
+        W-->>F: 推送最终结果<br/>type: bet_result<br/>requestId: xxx<br/>summary: {accepted: 2, rejected: 1}<br/>details: [...]
+        F->>F: 显示汇总结果<br/>清空成功的投注<br/>保留失败的投注<br/>更新余额
+    end
