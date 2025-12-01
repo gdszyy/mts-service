@@ -1,0 +1,505 @@
+{
+  "timestamp": "2025-11-30T20:22:42.410076",
+  "total_tests": 12,
+  "passed": 6,
+  "failed": 6,
+  "pass_rate": "50.00%",
+  "results": [
+    {
+      "test_id": "TC-HEALTH-001",
+      "description": "健康检查",
+      "timestamp": "2025-11-30T20:22:40.575564",
+      "result": {
+        "status_code": 200,
+        "response": {
+          "service": "mts-service",
+          "status": "healthy",
+          "timestamp": 1764552160
+        },
+        "success": true
+      },
+      "expected": "200 OK",
+      "passed": true
+    },
+    {
+      "test_id": "TC-SINGLE-001",
+      "description": "成功提交单注",
+      "timestamp": "2025-11-30T20:22:40.769402",
+      "result": {
+        "status_code": 500,
+        "response": {
+          "success": false,
+          "error": {
+            "code": 500,
+            "message": "Failed to send ticket",
+            "details": "MTS returned an error reply (version 3.0). Check service logs for details. CorrelationID: corr-1764552160578184864"
+          }
+        },
+        "success": false
+      },
+      "expected": "200 OK, accepted",
+      "passed": false
+    },
+    {
+      "test_id": "TC-SINGLE-002",
+      "description": "缺少 ticketId",
+      "timestamp": "2025-11-30T20:22:40.773785",
+      "result": {
+        "status_code": 400,
+        "response": {
+          "success": false,
+          "error": {
+            "code": 400,
+            "message": "Validation failed",
+            "details": "ticketId is required"
+          }
+        },
+        "success": false
+      },
+      "expected": "400 Bad Request",
+      "passed": true
+    },
+    {
+      "test_id": "TC-SINGLE-003",
+      "description": "无效的赔率",
+      "timestamp": "2025-11-30T20:22:40.777946",
+      "result": {
+        "status_code": 400,
+        "response": {
+          "success": false,
+          "error": {
+            "code": 400,
+            "message": "Validation failed",
+            "details": "selection: odds must be a valid number greater than 0"
+          }
+        },
+        "success": false
+      },
+      "expected": "400 Bad Request",
+      "passed": true
+    },
+    {
+      "test_id": "TC-ACC-001",
+      "description": "成功提交串关",
+      "timestamp": "2025-11-30T20:22:41.186870",
+      "result": {
+        "status_code": 200,
+        "response": {
+          "success": true,
+          "data": {
+            "operatorId": 45426,
+            "operation": "ticket-placement",
+            "content": {
+              "type": "ticket-reply",
+              "ticketId": "acc-72048e626207-1764552160",
+              "status": "rejected",
+              "code": -401,
+              "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+              "betDetails": [
+                {
+                  "code": -401,
+                  "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+                  "selectionDetails": [
+                    {
+                      "selection": {
+                        "type": "uf",
+                        "productId": "3",
+                        "eventId": "sr:match:12345",
+                        "marketId": "1",
+                        "outcomeId": "1",
+                        "odds": {
+                          "type": "decimal",
+                          "value": "2.50"
+                        }
+                      },
+                      "code": -401,
+                      "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)"
+                    },
+                    {
+                      "selection": {
+                        "type": "uf",
+                        "productId": "3",
+                        "eventId": "sr:match:12346",
+                        "marketId": "1",
+                        "outcomeId": "2",
+                        "odds": {
+                          "type": "decimal",
+                          "value": "1.80"
+                        }
+                      },
+                      "code": -401,
+                      "message": "Match is not found in MTS (selection: uof:3/sr:match:12346/1/2, match: sr:match:12346)"
+                    }
+                  ]
+                }
+              ],
+              "signature": "+6fStCeyFl6mPPZPz7vK/9SQX47Gyu2ofNsGV4rklioFkc4vsdCcx/vmDSmM9pxq8v0pBoDlIKM/PfBB",
+              "exchangeRate": [
+                {
+                  "fromCurrency": "EUR",
+                  "toCurrency": "EUR",
+                  "rate": "1.00000000"
+                }
+              ]
+            },
+            "correlationId": "corr-1764552160780346009",
+            "timestampUtc": 1764552161079,
+            "version": "3.0"
+          }
+        },
+        "success": true
+      },
+      "expected": "200 OK, accepted",
+      "passed": false
+    },
+    {
+      "test_id": "TC-ACC-002",
+      "description": "选项数量不足",
+      "timestamp": "2025-11-30T20:22:41.190380",
+      "result": {
+        "status_code": 400,
+        "response": {
+          "success": false,
+          "error": {
+            "code": 400,
+            "message": "Validation failed",
+            "details": "accumulator requires at least 2 selections"
+          }
+        },
+        "success": false
+      },
+      "expected": "400 Bad Request",
+      "passed": true
+    },
+    {
+      "test_id": "TC-SYS-001",
+      "description": "成功提交系统投注",
+      "timestamp": "2025-11-30T20:22:41.632904",
+      "result": {
+        "status_code": 200,
+        "response": {
+          "success": true,
+          "data": {
+            "operatorId": 45426,
+            "operation": "ticket-placement",
+            "content": {
+              "type": "ticket-reply",
+              "ticketId": "sys-f72df0bb0b87-1764552161",
+              "status": "rejected",
+              "code": -401,
+              "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+              "betDetails": [
+                {
+                  "code": -401,
+                  "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+                  "selectionDetails": [
+                    {
+                      "selection": {
+                        "type": "uf",
+                        "productId": "3",
+                        "eventId": "sr:match:12345",
+                        "marketId": "1",
+                        "outcomeId": "1",
+                        "odds": {
+                          "type": "decimal",
+                          "value": "2.50"
+                        }
+                      },
+                      "code": -401,
+                      "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)"
+                    },
+                    {
+                      "selection": {
+                        "type": "uf",
+                        "productId": "3",
+                        "eventId": "sr:match:12346",
+                        "marketId": "1",
+                        "outcomeId": "2",
+                        "odds": {
+                          "type": "decimal",
+                          "value": "1.80"
+                        }
+                      },
+                      "code": -401,
+                      "message": "Match is not found in MTS (selection: uof:3/sr:match:12346/1/2, match: sr:match:12346)"
+                    },
+                    {
+                      "selection": {
+                        "type": "uf",
+                        "productId": "3",
+                        "eventId": "sr:match:12347",
+                        "marketId": "1",
+                        "outcomeId": "1",
+                        "odds": {
+                          "type": "decimal",
+                          "value": "3.00"
+                        }
+                      },
+                      "code": -401,
+                      "message": "Match is not found in MTS (selection: uof:3/sr:match:12347/1/1, match: sr:match:12347)"
+                    }
+                  ]
+                }
+              ],
+              "signature": "XLRRpFXCLgJIPXBBA3ws3MGXdH108NzVYGhBjuK7xCONyrNzFavxUxOZOUGgQzdTb136VeK2toe3o1jp",
+              "exchangeRate": [
+                {
+                  "fromCurrency": "EUR",
+                  "toCurrency": "EUR",
+                  "rate": "1.00000000"
+                }
+              ]
+            },
+            "correlationId": "corr-1764552161194786619",
+            "timestampUtc": 1764552161517,
+            "version": "3.0"
+          }
+        },
+        "success": true
+      },
+      "expected": "200 OK, accepted",
+      "passed": false
+    },
+    {
+      "test_id": "TC-SYS-002",
+      "description": "无效的 stake mode",
+      "timestamp": "2025-11-30T20:22:41.637307",
+      "result": {
+        "status_code": 400,
+        "response": {
+          "success": false,
+          "error": {
+            "code": 400,
+            "message": "Validation failed",
+            "details": "system bet stake mode must be 'unit'"
+          }
+        },
+        "success": false
+      },
+      "expected": "400 Bad Request",
+      "passed": true
+    },
+    {
+      "test_id": "TC-BANKER-001",
+      "description": "成功提交 Banker 系统投注",
+      "timestamp": "2025-11-30T20:22:41.838070",
+      "result": {
+        "status_code": 500,
+        "response": {
+          "success": false,
+          "error": {
+            "code": 500,
+            "message": "Failed to send ticket",
+            "details": "MTS returned an error reply (version 3.0). Check service logs for details. CorrelationID: corr-1764552161639727176"
+          }
+        },
+        "success": false
+      },
+      "expected": "200 OK, accepted",
+      "passed": false
+    },
+    {
+      "test_id": "TC-PRESET-001",
+      "description": "成功提交 Trixie 投注",
+      "timestamp": "2025-11-30T20:22:42.150377",
+      "result": {
+        "status_code": 200,
+        "response": {
+          "success": true,
+          "data": {
+            "operatorId": 45426,
+            "operation": "ticket-placement",
+            "content": {
+              "type": "ticket-reply",
+              "ticketId": "trixie-de3b0cb2d60f-1764552161",
+              "status": "rejected",
+              "code": -401,
+              "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+              "betDetails": [
+                {
+                  "code": -401,
+                  "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+                  "selectionDetails": [
+                    {
+                      "selection": {
+                        "type": "uf",
+                        "productId": "3",
+                        "eventId": "sr:match:12345",
+                        "marketId": "1",
+                        "outcomeId": "1",
+                        "odds": {
+                          "type": "decimal",
+                          "value": "2.50"
+                        }
+                      },
+                      "code": -401,
+                      "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)"
+                    },
+                    {
+                      "selection": {
+                        "type": "uf",
+                        "productId": "3",
+                        "eventId": "sr:match:12346",
+                        "marketId": "1",
+                        "outcomeId": "2",
+                        "odds": {
+                          "type": "decimal",
+                          "value": "1.80"
+                        }
+                      },
+                      "code": -401,
+                      "message": "Match is not found in MTS (selection: uof:3/sr:match:12346/1/2, match: sr:match:12346)"
+                    },
+                    {
+                      "selection": {
+                        "type": "uf",
+                        "productId": "3",
+                        "eventId": "sr:match:12347",
+                        "marketId": "1",
+                        "outcomeId": "1",
+                        "odds": {
+                          "type": "decimal",
+                          "value": "3.00"
+                        }
+                      },
+                      "code": -401,
+                      "message": "Match is not found in MTS (selection: uof:3/sr:match:12347/1/1, match: sr:match:12347)"
+                    }
+                  ]
+                }
+              ],
+              "signature": "rEP8LOQwuDHiJAcy2FEjrcurIhPnmPL9DtArzsnQkBmOIIUqnLtyRCj01ET9sHV4gECukQrKS7uhGLYa",
+              "exchangeRate": [
+                {
+                  "fromCurrency": "EUR",
+                  "toCurrency": "EUR",
+                  "rate": "1.00000000"
+                }
+              ]
+            },
+            "correlationId": "corr-1764552161841025181",
+            "timestampUtc": 1764552161980,
+            "version": "3.0"
+          }
+        },
+        "success": true
+      },
+      "expected": "200 OK, accepted",
+      "passed": false
+    },
+    {
+      "test_id": "TC-PRESET-002",
+      "description": "选项数量与类型不匹配",
+      "timestamp": "2025-11-30T20:22:42.154270",
+      "result": {
+        "status_code": 400,
+        "response": {
+          "success": false,
+          "error": {
+            "code": 400,
+            "message": "Validation failed",
+            "details": "trixie requires exactly 3 selections, got 2"
+          }
+        },
+        "success": false
+      },
+      "expected": "400 Bad Request",
+      "passed": true
+    },
+    {
+      "test_id": "TC-MULTI-001",
+      "description": "成功提交多重彩",
+      "timestamp": "2025-11-30T20:22:42.409959",
+      "result": {
+        "status_code": 200,
+        "response": {
+          "success": true,
+          "data": {
+            "operatorId": 45426,
+            "operation": "ticket-placement",
+            "content": {
+              "type": "ticket-reply",
+              "ticketId": "multi-f71e59d1508a-1764552162",
+              "status": "rejected",
+              "code": -401,
+              "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+              "betDetails": [
+                {
+                  "code": -401,
+                  "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+                  "selectionDetails": [
+                    {
+                      "selection": {
+                        "type": "uf",
+                        "productId": "3",
+                        "eventId": "sr:match:12345",
+                        "marketId": "1",
+                        "outcomeId": "1",
+                        "odds": {
+                          "type": "decimal",
+                          "value": "2.50"
+                        }
+                      },
+                      "code": -401,
+                      "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)"
+                    }
+                  ]
+                },
+                {
+                  "code": -401,
+                  "message": "Match is not found in MTS (selection: uof:3/sr:match:12346/1/2, match: sr:match:12346)",
+                  "selectionDetails": [
+                    {
+                      "selection": {
+                        "type": "uf",
+                        "productId": "3",
+                        "eventId": "sr:match:12346",
+                        "marketId": "1",
+                        "outcomeId": "2",
+                        "odds": {
+                          "type": "decimal",
+                          "value": "1.80"
+                        }
+                      },
+                      "code": -401,
+                      "message": "Match is not found in MTS (selection: uof:3/sr:match:12346/1/2, match: sr:match:12346)"
+                    },
+                    {
+                      "selection": {
+                        "type": "uf",
+                        "productId": "3",
+                        "eventId": "sr:match:12347",
+                        "marketId": "1",
+                        "outcomeId": "1",
+                        "odds": {
+                          "type": "decimal",
+                          "value": "3.00"
+                        }
+                      },
+                      "code": -401,
+                      "message": "Match is not found in MTS (selection: uof:3/sr:match:12347/1/1, match: sr:match:12347)"
+                    }
+                  ]
+                }
+              ],
+              "signature": "fCN9TMDKdPtkzzU+mZLJr9JiYh4kFDVhYyiHwR5xrpSMV8Ab38TxwyS+JJ2RiDFYLAXtcf8YXed2aUOy",
+              "exchangeRate": [
+                {
+                  "fromCurrency": "EUR",
+                  "toCurrency": "EUR",
+                  "rate": "1.00000000"
+                }
+              ]
+            },
+            "correlationId": "corr-1764552162156676546",
+            "timestampUtc": 1764552162299,
+            "version": "3.0"
+          }
+        },
+        "success": true
+      },
+      "expected": "200 OK, accepted",
+      "passed": false
+    }
+  ]
+}

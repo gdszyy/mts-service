@@ -82,10 +82,15 @@ func (tb *TicketBuilder) AddSystemBet(size []int, selections []Selection, stake 
 }
 
 // AddBankerSystemBet adds a system bet with banker selections
-// This creates a proper MTS banker structure with nested system selections:
-// - Outer system: combines banker system and main system
-// - Banker system: type="system", size=[1], contains banker selections
-// - Main system: type="system", size=size, contains non-banker selections
+// According to MTS documentation, a banker system bet consists of:
+// - One selection of type "system" containing the non-banker selections
+// - One or more selections of type "uf" (the banker selections)
+// All selections are at the same level in the selections array.
+// 
+// Example: 3/4 system with 1 banker = 2/3 system + 1 banker selection
+// The bet will have 2 top-level selections:
+//   1. system selection with 3 nested non-banker selections and size=[2]
+//   2. uf selection (the banker)
 // 
 // bankers: selections that must be in every combination
 // size: array of combination sizes for non-banker selections
@@ -95,8 +100,8 @@ func (tb *TicketBuilder) AddBankerSystemBet(bankers []Selection, size []int, sel
 	if len(bankers) < 1 {
 		panic("banker system bet requires at least 1 banker")
 	}
-	if len(selections) < 1 {
-		panic("banker system bet requires at least 1 non-banker selection")
+	if len(selections) < 2 {
+		panic("banker system bet requires at least 2 non-banker selections")
 	}
 	
 	// Validate size values
@@ -106,35 +111,19 @@ func (tb *TicketBuilder) AddBankerSystemBet(bankers []Selection, size []int, sel
 		}
 	}
 	
-	// Create banker system (size=[1] means all bankers must be included)
-	bankerSystem := Selection{
-		Type:       "system",
-		Size:       []int{1},
-		Selections: bankers,
-	}
-	
-	// Create main system for non-banker selections
-	mainSystem := Selection{
+	// Create system selection for non-banker selections
+	systemSelection := Selection{
 		Type:       "system",
 		Size:       size,
 		Selections: selections,
 	}
 	
-	// Calculate outer system size: banker count + each size value
-	outerSize := make([]int, len(size))
-	for i, s := range size {
-		outerSize[i] = len(bankers) + s
-	}
-	
-	// Create outer system that combines banker and main systems
-	rootSystem := Selection{
-		Type:       "system",
-		Size:       outerSize,
-		Selections: []Selection{bankerSystem, mainSystem},
-	}
+	// Build top-level selections array: system selection + banker selections
+	topLevelSelections := []Selection{systemSelection}
+	topLevelSelections = append(topLevelSelections, bankers...)
 	
 	bet := Bet{
-		Selections: []Selection{rootSystem},
+		Selections: topLevelSelections,
 		Stake:      []Stake{stake},
 	}
 	tb.bets = append(tb.bets, bet)

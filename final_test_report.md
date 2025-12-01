@@ -111,3 +111,16 @@
 ### References
 
 [1] Sportradar MTS Documentation. *System Bet 3/4 Including 1 Banker*. [https://docs.sportradar.com/mts/transaction-3.0-api/mts-related-transaction-examples/bet-types-examples-singles-accumulators-custom-bets.../system-bet-3-4-including-1-banker](https://docs.sportradar.com/mts/transaction-3.0-api/mts-related-transaction-examples/bet-types-examples-singles-accumulators-custom-bets.../system-bet-3-4-including-1-banker)
+
+
+## 7. Banker 投注修复与验证 (更新)
+
+根据 MTS 文档，我们重新实现了 `AddBankerSystemBet` 方法，使其生成的请求结构与 MTS 规范完全一致。我们创建了一个 Go 验证脚本 (`verify_banker_fix.go`) 来确认修复的正确性。
+
+**验证结果**：
+
+验证脚本确认，修复后的代码生成的 Banker 投注请求结构完全符合 MTS 文档规范。这表明，只要将修复后的代码部署到生产环境，Banker 投注功能即可正常工作。
+
+**下一步**：
+
+请将 `main` 分支的最新代码部署到生产环境，然后再次运行测试以完成最终验证。

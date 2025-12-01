@@ -1,0 +1,231 @@
+{
+  "submitted_tickets": [
+    {
+      "ticketId": "single-b7bcd7b9db90-1764552209",
+      "bet_type": "single",
+      "submit_time": "2025-11-30T20:23:29.912208",
+      "response": {
+        "operatorId": 45426,
+        "operation": "ticket-placement",
+        "content": {
+          "type": "ticket-reply",
+          "ticketId": "single-b7bcd7b9db90-1764552209",
+          "status": "rejected",
+          "code": -401,
+          "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+          "betDetails": [
+            {
+              "code": -401,
+              "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+              "selectionDetails": [
+                {
+                  "selection": {
+                    "type": "uf",
+                    "productId": "3",
+                    "eventId": "sr:match:12345",
+                    "marketId": "1",
+                    "outcomeId": "1",
+                    "odds": {
+                      "type": "decimal",
+                      "value": "2.50"
+                    }
+                  },
+                  "code": -401,
+                  "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)"
+                }
+              ]
+            }
+          ],
+          "signature": "w7U3PYMNDhQNqv8jQmQtT+ZbXMHNtnCpztoxBkotlo4OakCg3Q350y+UXEYtDAvxDMcHyDYoLSPvu66J",
+          "exchangeRate": [
+            {
+              "fromCurrency": "EUR",
+              "toCurrency": "EUR",
+              "rate": "1.00000000"
+            }
+          ]
+        },
+        "correlationId": "corr-1764552209635030167",
+        "timestampUtc": 1764552209798,
+        "version": "3.0"
+      },
+      "status": "rejected",
+      "signature": "w7U3PYMNDhQNqv8jQmQtT+ZbXMHNtnCpztoxBkotlo4OakCg3Q350y+UXEYtDAvxDMcHyDYoLSPvu66J",
+      "code": -401,
+      "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)"
+    },
+    {
+      "ticketId": "acc-2bf44e95b666-1764552209",
+      "bet_type": "accumulator",
+      "submit_time": "2025-11-30T20:23:30.219341",
+      "response": {
+        "operatorId": 45426,
+        "operation": "ticket-placement",
+        "content": {
+          "type": "ticket-reply",
+          "ticketId": "acc-2bf44e95b666-1764552209",
+          "status": "rejected",
+          "code": -401,
+          "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+          "betDetails": [
+            {
+              "code": -401,
+              "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+              "selectionDetails": [
+                {
+                  "selection": {
+                    "type": "uf",
+                    "productId": "3",
+                    "eventId": "sr:match:12345",
+                    "marketId": "1",
+                    "outcomeId": "1",
+                    "odds": {
+                      "type": "decimal",
+                      "value": "2.50"
+                    }
+                  },
+                  "code": -401,
+                  "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)"
+                },
+                {
+                  "selection": {
+                    "type": "uf",
+                    "productId": "3",
+                    "eventId": "sr:match:12346",
+                    "marketId": "1",
+                    "outcomeId": "2",
+                    "odds": {
+                      "type": "decimal",
+                      "value": "1.80"
+                    }
+                  },
+                  "code": -401,
+                  "message": "Match is not found in MTS (selection: uof:3/sr:match:12346/1/2, match: sr:match:12346)"
+                }
+              ]
+            }
+          ],
+          "signature": "umb8+2N7e4iYn8GytTvQPhWwzZTXr8Yb54M0wJBQKFvKWHVtKgpfmbOETMmAMhyKqPrAjmDpLnhsGhg3",
+          "exchangeRate": [
+            {
+              "fromCurrency": "EUR",
+              "toCurrency": "EUR",
+              "rate": "1.00000000"
+            }
+          ]
+        },
+        "correlationId": "corr-1764552209916059721",
+        "timestampUtc": 1764552210101,
+        "version": "3.0"
+      },
+      "status": "rejected",
+      "signature": "umb8+2N7e4iYn8GytTvQPhWwzZTXr8Yb54M0wJBQKFvKWHVtKgpfmbOETMmAMhyKqPrAjmDpLnhsGhg3",
+      "code": -401,
+      "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)"
+    },
+    {
+      "ticketId": "trixie-a1a6349dcdc4-1764552210",
+      "bet_type": "preset",
+      "submit_time": "2025-11-30T20:23:30.482986",
+      "response": {
+        "operatorId": 45426,
+        "operation": "ticket-placement",
+        "content": {
+          "type": "ticket-reply",
+          "ticketId": "trixie-a1a6349dcdc4-1764552210",
+          "status": "rejected",
+          "code": -401,
+          "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+          "betDetails": [
+            {
+              "code": -401,
+              "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)",
+              "selectionDetails": [
+                {
+                  "selection": {
+                    "type": "uf",
+                    "productId": "3",
+                    "eventId": "sr:match:12345",
+                    "marketId": "1",
+                    "outcomeId": "1",
+                    "odds": {
+                      "type": "decimal",
+                      "value": "2.50"
+                    }
+                  },
+                  "code": -401,
+                  "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)"
+                },
+                {
+                  "selection": {
+                    "type": "uf",
+                    "productId": "3",
+                    "eventId": "sr:match:12346",
+                    "marketId": "1",
+                    "outcomeId": "2",
+                    "odds": {
+                      "type": "decimal",
+                      "value": "1.80"
+                    }
+                  },
+                  "code": -401,
+                  "message": "Match is not found in MTS (selection: uof:3/sr:match:12346/1/2, match: sr:match:12346)"
+                },
+                {
+                  "selection": {
+                    "type": "uf",
+                    "productId": "3",
+                    "eventId": "sr:match:12347",
+                    "marketId": "1",
+                    "outcomeId": "1",
+                    "odds": {
+                      "type": "decimal",
+                      "value": "3.00"
+                    }
+                  },
+                  "code": -401,
+                  "message": "Match is not found in MTS (selection: uof:3/sr:match:12347/1/1, match: sr:match:12347)"
+                }
+              ]
+            }
+          ],
+          "signature": "hLaEN9REz7xFTtiGmBSY2MFyZSn78uds1Yw1sB4s/a3xfh1ztbHNUdcH/ZT/ClaIz6vO2qHz+PrgOeZv",
+          "exchangeRate": [
+            {
+              "fromCurrency": "EUR",
+              "toCurrency": "EUR",
+              "rate": "1.00000000"
+            }
+          ]
+        },
+        "correlationId": "corr-1764552210222383041",
+        "timestampUtc": 1764552210362,
+        "version": "3.0"
+      },
+      "status": "rejected",
+      "signature": "hLaEN9REz7xFTtiGmBSY2MFyZSn78uds1Yw1sB4s/a3xfh1ztbHNUdcH/ZT/ClaIz6vO2qHz+PrgOeZv",
+      "code": -401,
+      "message": "Match is not found in MTS (selection: uof:3/sr:match:12345/1/1, match: sr:match:12345)"
+    }
+  ],
+  "verification_results": [
+    {
+      "ticketId": "single-b7bcd7b9db90-1764552209",
+      "bet_type": "single",
+      "status": "rejected",
+      "verified": true
+    },
+    {
+      "ticketId": "acc-2bf44e95b666-1764552209",
+      "bet_type": "accumulator",
+      "status": "rejected",
+      "verified": true
+    },
+    {
+      "ticketId": "trixie-a1a6349dcdc4-1764552210",
+      "bet_type": "preset",
+      "status": "rejected",
+      "verified": true
+    }
+  ]
+}
