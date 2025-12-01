@@ -1,0 +1,48 @@
+flowchart TD
+    Start([用户切换到单关模式]) --> CheckSelections{投注单中有选项?}
+    CheckSelections -->|否| EmptyState[显示空投注单提示]
+    CheckSelections -->|是| RenderList[渲染选项列表<br/>每个选项独立显示]
+    
+    RenderList --> ShowInputs[为每个选项显示<br/>独立的金额输入框]
+    ShowInputs --> WaitInput[等待用户输入金额]
+    
+    WaitInput --> UserInput{用户输入金额}
+    UserInput --> CalcIndividual[计算该选项的预计返还<br/>返还 = 金额 × 赔率]
+    CalcIndividual --> DisplayIndividual[显示该选项的预计返还]
+    DisplayIndividual --> CalcTotal[计算所有选项的总投注额]
+    CalcTotal --> DisplayTotal[显示总投注额]
+    DisplayTotal --> WaitInput
+    
+    WaitInput --> ClickBet{用户点击投注按钮}
+    ClickBet --> ValidateInputs{验证输入}
+    ValidateInputs -->|至少一个选项有金额| DisableBtn[禁用按钮并显示加载状态]
+    ValidateInputs -->|所有选项金额为空| ShowError[显示错误提示]
+    ShowError --> WaitInput
+    
+    DisableBtn --> BuildRequest[构建 API 请求<br/>POST /api/bets/multi<br/>包含多个 type=single 的 BetDefinition]
+    BuildRequest --> SendRequest[发送请求到 MTS Service]
+    SendRequest --> WaitResponse[等待响应]
+    
+    WaitResponse --> CheckResponse{响应状态}
+    CheckResponse -->|200 OK| Success[显示成功提示]
+    CheckResponse -->|4xx/5xx| Error[显示错误信息]
+    
+    Success --> ClearBetSlip[清空投注单]
+    ClearBetSlip --> ShowReceipt[可选：显示投注收据]
+    ShowReceipt --> End([结束])
+    
+    Error --> KeepBetSlip[保留投注单内容]
+    KeepBetSlip --> EnableBtn[重新启用投注按钮]
+    EnableBtn --> WaitInput
+    
+    EmptyState --> End
+    
+    style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#F44336,stroke:#C62828,color:#fff
+    style RenderList fill:#2196F3,stroke:#1565C0,color:#fff
+    style Success fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style Error fill:#FF9800,stroke:#E65100,color:#fff
+    style SendRequest fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style CheckResponse fill:#FFC107,stroke:#F57C00,color:#000
+    style BuildRequest fill:#00BCD4,stroke:#00838F,color:#fff
+    style ValidateInputs fill:#FFC107,stroke:#F57C00,color:#000

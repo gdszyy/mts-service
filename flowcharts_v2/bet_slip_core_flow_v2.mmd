@@ -1,0 +1,46 @@
+flowchart TD
+    Start([用户浏览赛事]) --> ClickOdds{用户点击赔率}
+    
+    ClickOdds --> CheckExist{选项已在投注单?}
+    CheckExist -->|是| RemoveSelection[从投注单中移除选项]
+    CheckExist -->|否| AddSelection[添加选项到投注单]
+    
+    RemoveSelection --> UpdateUI1[更新界面：移除高亮]
+    AddSelection --> UpdateUI2[更新界面：添加高亮]
+    
+    UpdateUI1 --> UpdateBetSlip[更新投注单状态]
+    UpdateUI2 --> UpdateBetSlip
+    
+    UpdateBetSlip --> CheckMode{当前投注模式}
+    
+    CheckMode -->|单关模式| RenderSingle[渲染单关视图<br/>每个选项独立显示<br/>带独立金额输入框]
+    CheckMode -->|串关模式| RenderMulti[渲染串关视图<br/>聚合所有选项]
+    
+    RenderSingle --> WaitUserAction[等待用户操作]
+    RenderMulti --> ShowSubTabs[显示子标签页<br/>串关/系统/Banker]
+    ShowSubTabs --> WaitUserAction
+    
+    WaitUserAction --> UserAction{用户操作}
+    UserAction -->|添加/移除选项| ClickOdds
+    UserAction -->|切换模式| SwitchMode[切换单关/串关模式]
+    UserAction -->|输入金额| UpdateAmount[更新金额并重新计算]
+    UserAction -->|点击投注| SubmitBet[提交投注]
+    
+    SwitchMode --> CheckMode
+    
+    UpdateAmount --> RecalcPayout[重新计算预计返还]
+    RecalcPayout --> DisplayPayout[更新显示]
+    DisplayPayout --> WaitUserAction
+    
+    SubmitBet --> BetFlow[进入对应场景的提交流程]
+    BetFlow --> End([结束或返回投注单])
+    
+    style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#F44336,stroke:#C62828,color:#fff
+    style CheckMode fill:#FFC107,stroke:#F57C00,color:#000
+    style RenderSingle fill:#2196F3,stroke:#1565C0,color:#fff
+    style RenderMulti fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style SubmitBet fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style AddSelection fill:#00BCD4,stroke:#00838F,color:#fff
+    style RemoveSelection fill:#FF9800,stroke:#E65100,color:#fff
+    style SwitchMode fill:#E91E63,stroke:#880E4F,color:#fff
