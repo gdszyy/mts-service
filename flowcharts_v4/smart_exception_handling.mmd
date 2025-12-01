@@ -1,0 +1,61 @@
+flowchart TD
+    Start([投注单中存在异常选项]) --> DetectException[检测异常类型<br/>锁定盘口/失效选项/冲突选项]
+    
+    DetectException --> MarkException[将异常选项标记<br/>灰色/红色边框/警告图标]
+    MarkException --> CheckUserMode{检查用户模式}
+    
+    CheckUserMode -->|新手模式| NewbieMode[新手模式处理]
+    CheckUserMode -->|老手模式| ExpertMode[老手模式处理]
+    
+    NewbieMode --> CheckBtnArea{用户点击区域}
+    CheckBtnArea -->|点击下单按钮| AutoCleanup[自动移除所有异常选项]
+    CheckBtnArea -->|点击异常选项| ManualRemove1[允许手动移除单个选项]
+    
+    AutoCleanup --> ShowCleanupMsg[显示通知<br/>已自动移除X个异常选项]
+    ShowCleanupMsg --> RevalidateBet1[重新验证投注单]
+    
+    ManualRemove1 --> UpdateBetSlip1[更新投注单显示]
+    UpdateBetSlip1 --> RevalidateBet1
+    
+    RevalidateBet1 --> CheckValid1{投注单是否有效?}
+    CheckValid1 -->|有效| EnableSubmit1[启用下单按钮<br/>允许提交]
+    CheckValid1 -->|无效| ShowError1[显示错误提示<br/>请检查投注单]
+    
+    ExpertMode --> DisableSubmit[禁用下单按钮<br/>显示: 存在异常选项]
+    DisableSubmit --> ShowExpertHint[在投注单顶部显示提示<br/>请手动移除异常选项后下单]
+    ShowExpertHint --> WaitExpertAction[等待用户手动操作]
+    
+    WaitExpertAction --> ExpertAction{用户操作}
+    ExpertAction -->|手动移除异常选项| ManualRemove2[移除选中的异常选项]
+    ExpertAction -->|观察和比对| KeepObserving[保持异常选项<br/>继续观察赔率]
+    
+    ManualRemove2 --> UpdateBetSlip2[更新投注单显示]
+    UpdateBetSlip2 --> RevalidateBet2[重新验证投注单]
+    
+    RevalidateBet2 --> CheckValid2{投注单是否有效?}
+    CheckValid2 -->|有效| EnableSubmit2[启用下单按钮<br/>允许提交]
+    CheckValid2 -->|无效| ShowExpertHint
+    
+    KeepObserving --> WaitExpertAction
+    
+    EnableSubmit1 --> End([用户可以下单])
+    EnableSubmit2 --> End
+    ShowError1 --> End
+    
+    style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#F44336,stroke:#C62828,color:#fff
+    style NewbieMode fill:#2196F3,stroke:#1565C0,color:#fff
+    style ExpertMode fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style AutoCleanup fill:#E91E63,stroke:#880E4F,color:#fff
+    style ShowCleanupMsg fill:#00BCD4,stroke:#00838F,color:#fff
+    style DisableSubmit fill:#F44336,stroke:#C62828,color:#fff
+    style ShowExpertHint fill:#FF9800,stroke:#E65100,color:#fff
+    style EnableSubmit1 fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style EnableSubmit2 fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style ShowError1 fill:#F44336,stroke:#C62828,color:#fff
+    style MarkException fill:#FF9800,stroke:#E65100,color:#fff
+    style CheckUserMode fill:#FFC107,stroke:#F57C00,color:#000
+    style CheckBtnArea fill:#FFC107,stroke:#F57C00,color:#000
+    style CheckValid1 fill:#FFC107,stroke:#F57C00,color:#000
+    style CheckValid2 fill:#FFC107,stroke:#F57C00,color:#000
+    style ExpertAction fill:#FFC107,stroke:#F57C00,color:#000

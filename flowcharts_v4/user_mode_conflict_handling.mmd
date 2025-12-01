@@ -1,0 +1,45 @@
+flowchart TD
+    Start([用户选择新的选项]) --> CheckUserMode{检查用户模式}
+    
+    CheckUserMode -->|新手模式| CheckConflict1{检查是否与<br/>现有选项冲突}
+    CheckUserMode -->|老手模式| AllowMultiple[允许添加互斥选项<br/>用于观察和比对]
+    
+    CheckConflict1 -->|有冲突| AutoReplace[自动替换冲突选项<br/>保留新选择]
+    CheckConflict1 -->|无冲突| AddSelection1[添加选项到投注单]
+    
+    AutoReplace --> ShowNotification[显示通知<br/>已自动替换冲突选项]
+    ShowNotification --> AddSelection1
+    
+    AllowMultiple --> AddSelection2[添加选项到投注单<br/>标记互斥关系]
+    AddSelection2 --> MarkConflict[将互斥选项标记为<br/>橙色边框或警告图标]
+    MarkConflict --> ShowWarning[在投注单顶部显示警告<br/>存在互斥选项，请手动移除]
+    
+    AddSelection1 --> UpdateBetSlip1[更新投注单显示]
+    ShowWarning --> UpdateBetSlip2[更新投注单显示]
+    
+    UpdateBetSlip1 --> ValidateForSubmit1[验证投注单有效性]
+    UpdateBetSlip2 --> ValidateForSubmit2[验证投注单有效性]
+    
+    ValidateForSubmit1 --> EnableSubmit[启用下单按钮]
+    ValidateForSubmit2 --> CheckConflictStatus{是否存在<br/>互斥选项?}
+    
+    CheckConflictStatus -->|是| DisableSubmit[禁用下单按钮<br/>显示: 请移除互斥选项]
+    CheckConflictStatus -->|否| EnableSubmit
+    
+    EnableSubmit --> End([等待用户下单])
+    DisableSubmit --> WaitUserAction[等待用户手动移除]
+    WaitUserAction --> UserRemoves[用户移除互斥选项]
+    UserRemoves --> UpdateBetSlip2
+    
+    style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#F44336,stroke:#C62828,color:#fff
+    style AutoReplace fill:#E91E63,stroke:#880E4F,color:#fff
+    style AllowMultiple fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style MarkConflict fill:#FF9800,stroke:#E65100,color:#fff
+    style ShowWarning fill:#FF9800,stroke:#E65100,color:#fff
+    style ShowNotification fill:#2196F3,stroke:#1565C0,color:#fff
+    style EnableSubmit fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style DisableSubmit fill:#F44336,stroke:#C62828,color:#fff
+    style CheckUserMode fill:#FFC107,stroke:#F57C00,color:#000
+    style CheckConflict1 fill:#FFC107,stroke:#F57C00,color:#000
+    style CheckConflictStatus fill:#FFC107,stroke:#F57C00,color:#000

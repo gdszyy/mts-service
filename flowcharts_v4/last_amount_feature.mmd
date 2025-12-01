@@ -1,0 +1,49 @@
+flowchart TD
+    Start([用户查看金额输入区域]) --> DisplayQuickBtns[显示快捷金额按钮<br/>包括: +5, +10, +20, +50, +100, Last, Max]
+    
+    DisplayQuickBtns --> WaitClick[等待用户操作]
+    
+    WaitClick --> UserAction{用户操作}
+    
+    UserAction -->|点击 Last 按钮| CheckHistory{检查历史记录}
+    UserAction -->|点击其他按钮| OtherActions[执行其他快捷操作]
+    
+    CheckHistory -->|有历史记录| GetLastAmount[获取上一次成功投注的金额]
+    CheckHistory -->|无历史记录| ShowNoHistory[显示提示: 暂无历史投注记录]
+    
+    GetLastAmount --> CheckMode{检查当前投注模式}
+    
+    CheckMode -->|单关模式| FillSingleLast[将上次金额填充到<br/>当前焦点的输入框]
+    CheckMode -->|串关模式| FillMultiLast[将上次金额填充到<br/>串关总金额输入框]
+    
+    FillSingleLast --> RecalcPayout[重新计算预计返还]
+    FillMultiLast --> RecalcPayout
+    
+    ShowNoHistory --> WaitClick
+    OtherActions --> RecalcPayout
+    
+    RecalcPayout --> DisplayPayout[显示预计返还金额]
+    DisplayPayout --> SaveToHistory[将当前金额保存到<br/>临时历史记录]
+    SaveToHistory --> WaitSubmit[等待用户提交投注]
+    
+    WaitSubmit --> BetSubmitted{投注是否成功?}
+    BetSubmitted -->|成功| PersistHistory[将临时历史记录<br/>持久化为上次金额]
+    BetSubmitted -->|失败| DiscardHistory[丢弃临时历史记录]
+    
+    PersistHistory --> End([完成])
+    DiscardHistory --> End
+    
+    style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#F44336,stroke:#C62828,color:#fff
+    style DisplayQuickBtns fill:#2196F3,stroke:#1565C0,color:#fff
+    style GetLastAmount fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style FillSingleLast fill:#00BCD4,stroke:#00838F,color:#fff
+    style FillMultiLast fill:#00BCD4,stroke:#00838F,color:#fff
+    style RecalcPayout fill:#3F51B5,stroke:#1A237E,color:#fff
+    style ShowNoHistory fill:#FF9800,stroke:#E65100,color:#fff
+    style PersistHistory fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style DiscardHistory fill:#F44336,stroke:#C62828,color:#fff
+    style CheckHistory fill:#FFC107,stroke:#F57C00,color:#000
+    style CheckMode fill:#FFC107,stroke:#F57C00,color:#000
+    style UserAction fill:#FFC107,stroke:#F57C00,color:#000
+    style BetSubmitted fill:#FFC107,stroke:#F57C00,color:#000
