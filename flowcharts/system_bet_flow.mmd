@@ -1,0 +1,62 @@
+flowchart TD
+    Start([用户在投注单中添加多个选项]) --> CheckCount{投注单选项数量}
+    CheckCount -->|< 3 个选项| NotAvailable[系统投注不可用]
+    CheckCount -->|≥ 3 个选项| ShowTab[显示系统投注标签页]
+    
+    ShowTab --> UserSwitch{用户切换到系统投注标签}
+    UserSwitch -->|是| GenerateCombos[动态生成所有可能的系统组合]
+    UserSwitch -->|否| OtherScenarios[用户选择其他投注类型]
+    
+    GenerateCombos --> DisplayCombos[显示组合列表<br/>例如：二串一6注、三串一4注]
+    DisplayCombos --> CheckPreset{用户选择预设系统?}
+    
+    CheckPreset -->|是 例如Yankee| ShowPreset[显示预设系统详情<br/>例如：Yankee = 11注]
+    CheckPreset -->|否 自定义组合| CustomCombo[用户选择自定义组合]
+    
+    ShowPreset --> InputPresetAmount[用户输入单位投注金额]
+    InputPresetAmount --> CalcPresetTotal[计算总投注额<br/>总额 = 单位金额 × 注数]
+    CalcPresetTotal --> DisplayPresetTotal[显示总投注额]
+    DisplayPresetTotal --> ClickPresetBet{用户点击投注按钮}
+    
+    CustomCombo --> InputCustomAmount[用户为每种组合输入单位金额]
+    InputCustomAmount --> CalcCustomTotal[计算每种组合的总额<br/>并累加为总投注额]
+    CalcCustomTotal --> DisplayCustomTotal[显示总投注额]
+    DisplayCustomTotal --> ClickCustomBet{用户点击投注按钮}
+    
+    ClickPresetBet --> DisableBtn1[禁用按钮并显示加载状态]
+    DisableBtn1 --> BuildPresetRequest[构建 API 请求<br/>POST /api/bets/preset]
+    BuildPresetRequest --> SendRequest1[发送请求到 MTS Service]
+    
+    ClickCustomBet --> DisableBtn2[禁用按钮并显示加载状态]
+    DisableBtn2 --> BuildCustomRequest[构建 API 请求<br/>POST /api/bets/system]
+    BuildCustomRequest --> SendRequest2[发送请求到 MTS Service]
+    
+    SendRequest1 --> WaitResponse[等待响应]
+    SendRequest2 --> WaitResponse
+    
+    WaitResponse --> CheckResponse{响应状态}
+    CheckResponse -->|200 OK| Success[显示成功提示]
+    CheckResponse -->|4xx/5xx| Error[显示错误信息]
+    
+    Success --> ClearBetSlip[清空投注单]
+    ClearBetSlip --> ShowReceipt[可选：显示投注收据]
+    ShowReceipt --> End([结束])
+    
+    Error --> KeepBetSlip[保留投注单内容]
+    KeepBetSlip --> EnableBtn[重新启用投注按钮]
+    EnableBtn --> CheckPreset
+    
+    NotAvailable --> End
+    OtherScenarios --> End
+    
+    style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#F44336,stroke:#C62828,color:#fff
+    style ShowTab fill:#2196F3,stroke:#1565C0,color:#fff
+    style Success fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style Error fill:#FF9800,stroke:#E65100,color:#fff
+    style SendRequest1 fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style SendRequest2 fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style CheckResponse fill:#FFC107,stroke:#F57C00,color:#000
+    style GenerateCombos fill:#00BCD4,stroke:#00838F,color:#fff
+    style ShowPreset fill:#3F51B5,stroke:#1A237E,color:#fff
+    style CustomCombo fill:#3F51B5,stroke:#1A237E,color:#fff

@@ -1,0 +1,39 @@
+flowchart TD
+    Start([用户开始浏览赛事]) --> Browse[浏览赛事列表/详情]
+    Browse --> SelectOdds{用户点击赔率}
+    SelectOdds --> AddToBetSlip[添加选项到投注单]
+    AddToBetSlip --> CheckCount{投注单选项数量}
+    CheckCount -->|1 个选项| ShowSingle[显示单注视图]
+    CheckCount -->|> 1 个选项| OtherScenarios[切换到其他投注场景]
+    
+    ShowSingle --> InputAmount[用户输入投注金额]
+    InputAmount --> CalcPayout[实时计算预计返还<br/>返还 = 金额 × 赔率]
+    CalcPayout --> DisplayPayout[显示预计返还金额]
+    DisplayPayout --> ClickBet{用户点击投注按钮}
+    
+    ClickBet --> DisableBtn[禁用按钮并显示加载状态]
+    DisableBtn --> BuildRequest[构建 API 请求<br/>POST /api/bets/single]
+    BuildRequest --> SendRequest[发送请求到 MTS Service]
+    SendRequest --> WaitResponse[等待响应]
+    
+    WaitResponse --> CheckResponse{响应状态}
+    CheckResponse -->|200 OK| Success[显示成功提示]
+    CheckResponse -->|4xx/5xx| Error[显示错误信息]
+    
+    Success --> ClearBetSlip[清空投注单]
+    ClearBetSlip --> ShowReceipt[可选：显示投注收据]
+    ShowReceipt --> End([结束])
+    
+    Error --> KeepBetSlip[保留投注单内容]
+    KeepBetSlip --> EnableBtn[重新启用投注按钮]
+    EnableBtn --> InputAmount
+    
+    OtherScenarios --> End
+    
+    style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#F44336,stroke:#C62828,color:#fff
+    style ShowSingle fill:#2196F3,stroke:#1565C0,color:#fff
+    style Success fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style Error fill:#FF9800,stroke:#E65100,color:#fff
+    style SendRequest fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style CheckResponse fill:#FFC107,stroke:#F57C00,color:#000

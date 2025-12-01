@@ -1,0 +1,43 @@
+flowchart TD
+    Start([用户在投注单中添加多个选项]) --> CheckCount{投注单选项数量}
+    CheckCount -->|< 2 个选项| NotAvailable[串关不可用]
+    CheckCount -->|≥ 2 个选项| ShowTab[显示串关标签页]
+    
+    ShowTab --> UserSwitch{用户切换到串关标签}
+    UserSwitch -->|是| CalculateOdds[计算总赔率<br/>总赔率 = 选项1赔率 × 选项2赔率 × ...]
+    UserSwitch -->|否| OtherScenarios[用户选择其他投注类型]
+    
+    CalculateOdds --> DisplayOdds[显示总赔率]
+    DisplayOdds --> InputAmount[用户输入总投注金额]
+    InputAmount --> CalcPayout[实时计算预计总返还<br/>总返还 = 金额 × 总赔率]
+    CalcPayout --> DisplayPayout[显示预计总返还金额]
+    DisplayPayout --> ClickBet{用户点击投注按钮}
+    
+    ClickBet --> DisableBtn[禁用按钮并显示加载状态]
+    DisableBtn --> BuildRequest[构建 API 请求<br/>POST /api/bets/accumulator]
+    BuildRequest --> SendRequest[发送请求到 MTS Service]
+    SendRequest --> WaitResponse[等待响应]
+    
+    WaitResponse --> CheckResponse{响应状态}
+    CheckResponse -->|200 OK| Success[显示成功提示]
+    CheckResponse -->|4xx/5xx| Error[显示错误信息]
+    
+    Success --> ClearBetSlip[清空投注单]
+    ClearBetSlip --> ShowReceipt[可选：显示投注收据]
+    ShowReceipt --> End([结束])
+    
+    Error --> KeepBetSlip[保留投注单内容]
+    KeepBetSlip --> EnableBtn[重新启用投注按钮]
+    EnableBtn --> InputAmount
+    
+    NotAvailable --> End
+    OtherScenarios --> End
+    
+    style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#F44336,stroke:#C62828,color:#fff
+    style ShowTab fill:#2196F3,stroke:#1565C0,color:#fff
+    style Success fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style Error fill:#FF9800,stroke:#E65100,color:#fff
+    style SendRequest fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style CheckResponse fill:#FFC107,stroke:#F57C00,color:#000
+    style CalculateOdds fill:#00BCD4,stroke:#00838F,color:#fff

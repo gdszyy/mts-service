@@ -1,0 +1,48 @@
+flowchart TD
+    Start([用户在系统投注视图中]) --> CheckCount{投注单选项数量}
+    CheckCount -->|< 3 个选项| NotAvailable[Banker 系统投注不可用]
+    CheckCount -->|≥ 3 个选项| ShowBankerOption[在每个选项旁显示<br/>Banker 复选框/按钮]
+    
+    ShowBankerOption --> UserMarkBanker{用户标记 Banker?}
+    UserMarkBanker -->|否| RegularSystem[继续常规系统投注流程]
+    UserMarkBanker -->|是| MarkBanker[将选中的选项标记为 Banker]
+    
+    MarkBanker --> HighlightBanker[高亮显示 Banker 选项]
+    HighlightBanker --> RecalcCombos[重新计算系统组合<br/>基于非 Banker 选项]
+    RecalcCombos --> DisplayNewCombos[显示更新后的组合列表<br/>例如：1个Banker + 3个非Banker<br/>= 二串一3注]
+    
+    DisplayNewCombos --> InputAmount[用户输入单位投注金额]
+    InputAmount --> CalcTotal[计算总投注额<br/>总额 = 单位金额 × 注数]
+    CalcTotal --> DisplayTotal[显示总投注额]
+    DisplayTotal --> ClickBet{用户点击投注按钮}
+    
+    ClickBet --> DisableBtn[禁用按钮并显示加载状态]
+    DisableBtn --> BuildRequest[构建 API 请求<br/>POST /api/bets/banker-system<br/>包含 bankers 和 selections 数组]
+    BuildRequest --> SendRequest[发送请求到 MTS Service]
+    SendRequest --> WaitResponse[等待响应]
+    
+    WaitResponse --> CheckResponse{响应状态}
+    CheckResponse -->|200 OK| Success[显示成功提示]
+    CheckResponse -->|4xx/5xx| Error[显示错误信息]
+    
+    Success --> ClearBetSlip[清空投注单]
+    ClearBetSlip --> ShowReceipt[可选：显示投注收据]
+    ShowReceipt --> End([结束])
+    
+    Error --> KeepBetSlip[保留投注单内容<br/>包括 Banker 标记]
+    KeepBetSlip --> EnableBtn[重新启用投注按钮]
+    EnableBtn --> InputAmount
+    
+    NotAvailable --> End
+    RegularSystem --> End
+    
+    style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#F44336,stroke:#C62828,color:#fff
+    style ShowBankerOption fill:#2196F3,stroke:#1565C0,color:#fff
+    style Success fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style Error fill:#FF9800,stroke:#E65100,color:#fff
+    style SendRequest fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style CheckResponse fill:#FFC107,stroke:#F57C00,color:#000
+    style MarkBanker fill:#E91E63,stroke:#880E4F,color:#fff
+    style HighlightBanker fill:#E91E63,stroke:#880E4F,color:#fff
+    style RecalcCombos fill:#00BCD4,stroke:#00838F,color:#fff
