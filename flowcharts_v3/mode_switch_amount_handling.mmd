@@ -1,0 +1,41 @@
+flowchart TD
+    Start([用户点击模式切换按钮]) --> CheckCurrent{当前模式}
+    
+    CheckCurrent -->|单关模式| CheckAmountSingle{检查是否有金额输入}
+    CheckCurrent -->|串关模式| CheckAmountMulti{检查是否有金额输入}
+    
+    CheckAmountSingle -->|有金额| ConfirmSingleToMulti[显示确认对话框<br/>切换到串关模式将清空<br/>所有单关投注金额<br/>是否继续?]
+    CheckAmountSingle -->|无金额| SwitchToMulti[直接切换到串关模式]
+    
+    CheckAmountMulti -->|有金额| ConfirmMultiToSingle[显示确认对话框<br/>切换到单关模式将清空<br/>所有串关投注金额<br/>是否继续?]
+    CheckAmountMulti -->|无金额| SwitchToSingle[直接切换到单关模式]
+    
+    ConfirmSingleToMulti --> UserDecision1{用户选择}
+    UserDecision1 -->|确认| ClearSingleAmounts[清空所有单关金额]
+    UserDecision1 -->|取消| StaySingle[保持单关模式]
+    
+    ClearSingleAmounts --> SwitchToMulti
+    SwitchToMulti --> RenderMultiView[渲染串关视图<br/>显示子标签页]
+    
+    ConfirmMultiToSingle --> UserDecision2{用户选择}
+    UserDecision2 -->|确认| ClearMultiAmounts[清空所有串关金额]
+    UserDecision2 -->|取消| StayMulti[保持串关模式]
+    
+    ClearMultiAmounts --> SwitchToSingle
+    SwitchToSingle --> RenderSingleView[渲染单关视图<br/>显示独立金额输入框]
+    
+    RenderMultiView --> End([完成])
+    RenderSingleView --> End
+    StaySingle --> End
+    StayMulti --> End
+    
+    style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#F44336,stroke:#C62828,color:#fff
+    style ConfirmSingleToMulti fill:#FF9800,stroke:#E65100,color:#fff
+    style ConfirmMultiToSingle fill:#FF9800,stroke:#E65100,color:#fff
+    style ClearSingleAmounts fill:#E91E63,stroke:#880E4F,color:#fff
+    style ClearMultiAmounts fill:#E91E63,stroke:#880E4F,color:#fff
+    style SwitchToMulti fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style SwitchToSingle fill:#2196F3,stroke:#1565C0,color:#fff
+    style UserDecision1 fill:#FFC107,stroke:#F57C00,color:#000
+    style UserDecision2 fill:#FFC107,stroke:#F57C00,color:#000

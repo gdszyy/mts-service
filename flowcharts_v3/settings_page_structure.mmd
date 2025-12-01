@@ -1,0 +1,65 @@
+flowchart TD
+    Start([用户打开设置页面]) --> DisplaySettings[显示设置页面]
+    
+    DisplaySettings --> ShowSections[显示设置分区]
+    
+    ShowSections --> Section1[赔率展示方式]
+    ShowSections --> Section2[接受赔率变化方式]
+    ShowSections --> Section3[快捷金额自定义]
+    ShowSections --> Section4[其他设置]
+    
+    Section1 --> OddsFormat[提供选项:<br/>- 小数赔率 Decimal<br/>- 分数赔率 Fractional<br/>- 美式赔率 American]
+    OddsFormat --> UserSelect1{用户选择}
+    UserSelect1 --> SaveOddsFormat[保存赔率格式设置]
+    SaveOddsFormat --> UpdateUI1[实时更新所有赔率显示]
+    
+    Section2 --> OddsAcceptance[提供选项:<br/>- 不接受任何变化<br/>- 接受任何变化<br/>- 只接受更高赔率]
+    OddsAcceptance --> UserSelect2{用户选择}
+    UserSelect2 --> SaveAcceptance[保存赔率接受设置]
+    
+    Section3 --> QuickAmounts[显示当前快捷金额列表<br/>例如: +5, +10, +20, +50, +100]
+    QuickAmounts --> UserAction{用户操作}
+    UserAction -->|添加新金额| AddAmount[输入新金额值]
+    UserAction -->|修改现有金额| EditAmount[修改选中的金额值]
+    UserAction -->|删除金额| DeleteAmount[删除选中的金额]
+    
+    AddAmount --> ValidateAmount{验证金额}
+    EditAmount --> ValidateAmount
+    ValidateAmount -->|有效| UpdateQuickAmounts[更新快捷金额列表]
+    ValidateAmount -->|无效| ShowError[显示错误提示]
+    ShowError --> QuickAmounts
+    
+    DeleteAmount --> UpdateQuickAmounts
+    UpdateQuickAmounts --> SaveQuickAmounts[保存快捷金额设置]
+    
+    Section4 --> OtherSettings[提供其他选项:<br/>- 默认投注模式<br/>- 自动清空投注单<br/>- 通知偏好]
+    OtherSettings --> UserSelect3{用户选择}
+    UserSelect3 --> SaveOtherSettings[保存其他设置]
+    
+    UpdateUI1 --> WaitMoreChanges[等待更多设置更改]
+    SaveAcceptance --> WaitMoreChanges
+    SaveQuickAmounts --> WaitMoreChanges
+    SaveOtherSettings --> WaitMoreChanges
+    
+    WaitMoreChanges --> UserDone{用户操作}
+    UserDone -->|继续修改| ShowSections
+    UserDone -->|关闭设置| SaveAll[保存所有设置到本地存储/服务器]
+    SaveAll --> ShowConfirmation[显示确认提示<br/>设置已保存]
+    ShowConfirmation --> End([返回主界面])
+    
+    style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#F44336,stroke:#C62828,color:#fff
+    style DisplaySettings fill:#2196F3,stroke:#1565C0,color:#fff
+    style Section1 fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style Section2 fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style Section3 fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style Section4 fill:#9C27B0,stroke:#6A1B9A,color:#fff
+    style SaveAll fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style ShowConfirmation fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style ShowError fill:#F44336,stroke:#C62828,color:#fff
+    style ValidateAmount fill:#FFC107,stroke:#F57C00,color:#000
+    style UserSelect1 fill:#FFC107,stroke:#F57C00,color:#000
+    style UserSelect2 fill:#FFC107,stroke:#F57C00,color:#000
+    style UserSelect3 fill:#FFC107,stroke:#F57C00,color:#000
+    style UserAction fill:#FFC107,stroke:#F57C00,color:#000
+    style UserDone fill:#FFC107,stroke:#F57C00,color:#000
