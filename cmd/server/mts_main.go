@@ -11,6 +11,7 @@ import (
 	"github.com/gdsZyy/mts-service/internal/client"
 	"github.com/gdsZyy/mts-service/internal/config"
 	"github.com/gdsZyy/mts-service/internal/service"
+	ws "github.com/gdsZyy/mts-service/internal/websocket"
 )
 
 func main() {
@@ -50,6 +51,17 @@ func main() {
 		log.Fatalf("Failed to start MTS service: %v", err)
 	}
 
+	// Create WebSocket hub
+	hub := ws.NewHub()
+	go hub.Run()
+
+	// Create bet processor
+	betProcessor := ws.NewBetProcessor(hub, mtsService, cfg)
+	betProcessor.Start()
+
+	// Create WebSocket handler
+	wsHandler := ws.NewHandler(hub)
+
 	// Create API handler
 	handler := api.NewHandler(mtsService, cfg)
 
@@ -73,6 +85,9 @@ func main() {
 	// Cashout endpoint
 	mux.HandleFunc("/api/cashout", handler.RequestCashout)
 	
+	// WebSocket endpoint
+	mux.HandleFunc("/ws", wsHandler.ServeWS)
+	
 	// Root endpoint with API documentation
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -90,7 +105,8 @@ func main() {
 					"preset": "/api/bets/preset",
 					"multi": "/api/bets/multi"
 				},
-				"cashout": "/api/cashout"
+				"cashout": "/api/cashout",
+				"websocket": "/ws?userId=<userId>&token=<token>"
 			}
 		}`))
 	})
