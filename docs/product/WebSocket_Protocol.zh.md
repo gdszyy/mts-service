@@ -16,7 +16,45 @@
 
 ## 2. WebSocket 连接生命周期
 
-![WebSocket 连接生命周期](flowcharts_websocket/websocket_connection_lifecycle.mmd)
+```mermaid
+sequenceDiagram
+    participant F as 前端 Frontend
+    participant W as WebSocket 服务
+    participant M as MTS Service
+    participant S as Sportradar MTS
+    
+    Note over F,S: WebSocket 连接生命周期
+    
+    F->>W: 建立 WebSocket 连接<br/>ws://mts-service/ws?userId=xxx&token=xxx
+    W->>W: 验证 token 和用户身份
+    alt 验证成功
+        W-->>F: 连接成功<br/>type: connection_established
+        Note over F,W: 连接已建立，开始心跳
+    else 验证失败
+        W-->>F: 连接拒绝<br/>type: connection_rejected
+        W->>W: 关闭连接
+    end
+    
+    loop 每 30 秒
+        F->>W: 发送心跳<br/>type: ping
+        W-->>F: 响应心跳<br/>type: pong
+    end
+    
+    Note over F,W: 如果 60 秒内未收到心跳，服务端主动断开连接
+    
+    alt 网络异常
+        W->>W: 检测到连接断开
+        W->>W: 清理用户会话
+        F->>F: 检测到连接断开
+        F->>F: 尝试重连（指数退避）
+        F->>W: 重新建立连接
+    end
+    
+    Note over F,W: 用户主动关闭页面或登出
+    F->>W: 关闭 WebSocket 连接
+    W->>W: 清理用户会话
+    W-->>F: 连接关闭确认
+```
 
 **图 1：WebSocket 连接生命周期**
 
@@ -93,7 +131,55 @@ MTS 处理完成后，服务端通过 `bet_result` 消息推送最终结果。
 
 对于批量提交多个单注的场景，服务端会推送部分结果，以便前端实时更新进度。
 
-![批量单注流程](flowcharts_websocket/websocket_batch_single_bet_flow.mmd)
+```mermaid
+sequenceDiagram
+    participant F as 前端 Frontend
+    participant W as WebSocket 服务
+    participant M as MTS Service
+    participant S as Sportradar MTS
+    
+    Note over F,S: 场景：用户在单关模式下批量提交多个单注
+    
+    F->>F: 用户为 3 个选项输入金额<br/>点击"下单"按钮
+    F->>F: 生成唯一 requestId<br/>生成 3 个子 betId
+    F->>W: 发送批量投注请求<br/>type: place_bet<br/>requestId: xxx<br/>betType: multi<br/>bets: [bet1, bet2, bet3]
+    
+    W->>W: 验证请求格式
+    alt 验证失败
+        W-->>F: 返回错误<br/>type: bet_error<br/>requestId: xxx<br/>error: {...}
+        F->>F: 显示错误提示
+    else 验证成功
+        W-->>F: 确认接收<br/>type: bet_received<br/>requestId: xxx<br/>ticketIds: [yyy1, yyy2, yyy3]
+        F->>F: 显示"投注处理中..."<br/>显示进度: 0/3
+        
+        W->>M: 调用 POST /api/bets/multi<br/>包含 3 个 BetDefinition
+        M->>M: 构建 3 个独立 MTS Tickets
+        
+        par 并行处理
+            M->>S: 发送 Ticket 1
+            S-->>M: 返回 Response 1
+            M-->>W: 推送部分结果<br/>ticketId: yyy1<br/>status: accepted/rejected
+            W-->>F: 推送进度<br/>type: bet_partial_result<br/>requestId: xxx<br/>completed: 1/3<br/>result: {...}
+            F->>F: 更新进度: 1/3
+        and
+            M->>S: 发送 Ticket 2
+            S-->>M: 返回 Response 2
+            M-->>W: 推送部分结果<br/>ticketId: yyy2<br/>status: accepted/rejected
+            W-->>F: 推送进度<br/>type: bet_partial_result<br/>requestId: xxx<br/>completed: 2/3<br/>result: {...}
+            F->>F: 更新进度: 2/3
+        and
+            M->>S: 发送 Ticket 3
+            S-->>M: 返回 Response 3
+            M-->>W: 推送部分结果<br/>ticketId: yyy3<br/>status: accepted/rejected
+            W-->>F: 推送进度<br/>type: bet_partial_result<br/>requestId: xxx<br/>completed: 3/3<br/>result: {...}
+            F->>F: 更新进度: 3/3
+        end
+        
+        M-->>W: 所有投注完成<br/>summary: {...}
+        W-->>F: 推送最终结果<br/>type: bet_result<br/>requestId: xxx<br/>summary: {accepted: 2, rejected: 1}<br/>details: [...]
+        F->>F: 显示汇总结果<br/>清空成功的投注<br/>保留失败的投注<br/>更新余额
+    end
+```
 
 **图 2：批量单注提交流程**
 
@@ -106,13 +192,93 @@ MTS 处理完成后，服务端通过 `bet_result` 消息推送最终结果。
 
 ### 4.1. 单注投注
 
-![单注投注流程](flowcharts_websocket/websocket_single_bet_flow.mmd)
+```mermaid
+sequenceDiagram
+    participant F as 前端 Frontend
+    participant W as WebSocket 服务
+    participant M as MTS Service
+    participant S as Sportradar MTS
+    
+    Note over F,S: 场景：用户提交单注投注
+    
+    F->>F: 用户点击"下单"按钮
+    F->>F: 生成唯一 requestId
+    F->>W: 发送投注请求<br/>type: place_bet<br/>requestId: xxx<br/>betType: single<br/>payload: {...}
+    
+    W->>W: 验证请求格式和用户权限
+    alt 验证失败
+        W-->>F: 返回错误<br/>type: bet_error<br/>requestId: xxx<br/>error: {...}
+        F->>F: 显示错误提示
+    else 验证成功
+        W-->>F: 确认接收<br/>type: bet_received<br/>requestId: xxx<br/>ticketId: yyy
+        F->>F: 显示"投注处理中..."<br/>禁用下单按钮
+        
+        W->>M: 调用 POST /api/bets/single
+        M->>M: 构建 MTS Ticket
+        M->>S: 发送 Ticket 到 Sportradar
+        
+        Note over M,S: MTS 处理延迟（通常 2-5 秒）
+        
+        S-->>M: 返回 Ticket Response
+        M->>M: 解析响应结果
+        
+        alt MTS 接受投注
+            M-->>W: 投注成功<br/>ticketId: yyy<br/>status: accepted
+            W-->>F: 推送结果<br/>type: bet_result<br/>requestId: xxx<br/>ticketId: yyy<br/>status: accepted<br/>details: {...}
+            F->>F: 显示成功提示<br/>清空投注单<br/>更新余额
+        else MTS 拒绝投注
+            M-->>W: 投注被拒<br/>ticketId: yyy<br/>status: rejected<br/>reason: {...}
+            W-->>F: 推送结果<br/>type: bet_result<br/>requestId: xxx<br/>ticketId: yyy<br/>status: rejected<br/>reason: {...}
+            F->>F: 显示拒绝原因<br/>保留投注单<br/>启用下单按钮
+        end
+    end
+```
 
 **图 3：单注投注交互序列图**
 
 ### 4.2. 串关投注 (Accumulator/System/Banker)
 
-![串关投注流程](flowcharts_websocket/websocket_multi_bet_flow.mmd)
+```mermaid
+sequenceDiagram
+    participant F as 前端 Frontend
+    participant W as WebSocket 服务
+    participant M as MTS Service
+    participant S as Sportradar MTS
+    
+    Note over F,S: 场景：用户提交串关投注（Accumulator/System/Banker）
+    
+    F->>F: 用户在串关模式下点击"下单"
+    F->>F: 生成唯一 requestId
+    F->>W: 发送投注请求<br/>type: place_bet<br/>requestId: xxx<br/>betType: accumulator/system/banker<br/>payload: {...}
+    
+    W->>W: 验证请求格式和选项有效性
+    alt 验证失败
+        W-->>F: 返回错误<br/>type: bet_error<br/>requestId: xxx<br/>error: {...}
+        F->>F: 显示错误提示
+    else 验证成功
+        W-->>F: 确认接收<br/>type: bet_received<br/>requestId: xxx<br/>ticketId: yyy
+        F->>F: 显示"投注处理中..."<br/>禁用下单按钮<br/>显示加载动画
+        
+        W->>M: 调用对应 API<br/>POST /api/bets/accumulator<br/>POST /api/bets/system<br/>POST /api/bets/banker-system
+        M->>M: 构建复杂 MTS Ticket<br/>处理多个 selections
+        M->>S: 发送 Ticket 到 Sportradar
+        
+        Note over M,S: MTS 处理延迟（串关通常 3-8 秒）
+        
+        S-->>M: 返回 Ticket Response
+        M->>M: 解析响应结果<br/>提取详细信息
+        
+        alt MTS 接受投注
+            M-->>W: 投注成功<br/>ticketId: yyy<br/>status: accepted<br/>totalOdds: xxx<br/>potentialPayout: xxx
+            W-->>F: 推送结果<br/>type: bet_result<br/>requestId: xxx<br/>ticketId: yyy<br/>status: accepted<br/>details: {...}
+            F->>F: 显示成功提示<br/>展示投注详情<br/>清空投注单<br/>更新余额
+        else MTS 拒绝投注
+            M-->>W: 投注被拒<br/>ticketId: yyy<br/>status: rejected<br/>reason: {...}
+            W-->>F: 推送结果<br/>type: bet_result<br/>requestId: xxx<br/>ticketId: yyy<br/>status: rejected<br/>reason: {...}
+            F->>F: 显示拒绝原因<br/>高亮问题选项<br/>保留投注单<br/>启用下单按钮
+        end
+    end
+```
 
 **图 4：串关投注交互序列图**
 
@@ -120,7 +286,77 @@ MTS 处理完成后，服务端通过 `bet_result` 消息推送最终结果。
 
 ## 5. 异常处理机制
 
-![异常处理流程](flowcharts_websocket/websocket_exception_scenarios.mmd)
+```mermaid
+sequenceDiagram
+    participant F as 前端 Frontend
+    participant W as WebSocket 服务
+    participant M as MTS Service
+    participant S as Sportradar MTS
+    
+    Note over F,S: 异常场景 1: 投注提交后赔率变化
+    
+    F->>W: 发送投注请求<br/>selection odds: 2.50
+    W-->>F: 确认接收<br/>ticketId: yyy
+    W->>M: 调用 API
+    M->>S: 发送 Ticket
+    
+    alt Sportradar 检测到赔率变化
+        S-->>M: 返回 rejected<br/>reason: odds_changed<br/>new_odds: 2.30
+        M-->>W: 投注被拒<br/>原因: 赔率变化
+        W-->>F: 推送结果<br/>type: bet_result<br/>status: rejected<br/>reason: odds_changed<br/>old_odds: 2.50<br/>new_odds: 2.30
+        
+        F->>F: 检查用户设置
+        alt 用户设置: 接受任何赔率变化
+            F->>F: 自动更新赔率为 2.30
+            F->>W: 重新提交投注<br/>新 requestId
+        else 用户设置: 不接受赔率变化
+            F->>F: 高亮显示赔率变化<br/>显示确认对话框
+            F->>F: 等待用户手动确认
+        end
+    end
+    
+    Note over F,S: 异常场景 2: 投注提交超时
+    
+    F->>W: 发送投注请求
+    W-->>F: 确认接收
+    W->>M: 调用 API
+    M->>S: 发送 Ticket
+    
+    Note over M,S: 网络延迟或 MTS 响应慢
+    
+    alt 超过 15 秒未收到响应
+        M->>M: 检测超时
+        M-->>W: 返回超时状态<br/>status: timeout
+        W-->>F: 推送超时通知<br/>type: bet_timeout<br/>requestId: xxx<br/>ticketId: yyy
+        F->>F: 显示提示: 投注处理中，请稍后查看投注记录
+        
+        Note over M,S: 后台继续等待 MTS 响应
+        
+        S-->>M: 延迟返回结果
+        M-->>W: 推送延迟结果
+        W-->>F: 推送结果<br/>type: bet_result_delayed<br/>ticketId: yyy<br/>status: accepted/rejected
+        F->>F: 显示通知: 您的投注已处理
+    end
+    
+    Note over F,S: 异常场景 3: WebSocket 连接断开
+    
+    F->>W: 发送投注请求
+    W-->>F: 确认接收<br/>ticketId: yyy
+    W->>M: 调用 API
+    
+    Note over F,W: WebSocket 连接意外断开
+    
+    F->>F: 检测到连接断开
+    F->>F: 尝试重连
+    F->>W: 重新建立连接
+    W-->>F: 连接成功
+    
+    F->>W: 查询投注状态<br/>type: query_bet_status<br/>ticketId: yyy
+    W->>M: 查询 Ticket 状态
+    M-->>W: 返回状态
+    W-->>F: 推送状态<br/>type: bet_status<br/>ticketId: yyy<br/>status: accepted/rejected/pending
+    F->>F: 根据状态更新 UI
+```
 
 **图 5：异常处理流程图**
 
