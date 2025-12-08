@@ -51,7 +51,7 @@ func (h *Handler) PlaceSingleBet(w http.ResponseWriter, r *http.Request) {
 	} else {
 		builder.SetContext(getDefaultContext(h.cfg))
 	}
-	
+
 	ticket := builder.Build(generateCorrelationID())
 	
 	// Send to MTS
@@ -101,6 +101,7 @@ func (h *Handler) PlaceAccumulatorBet(w http.ResponseWriter, r *http.Request) {
 	// Build ticket using TicketBuilder
 	builder := models.NewTicketBuilder(h.cfg.OperatorID, req.TicketID)
 	
+	
 	selections := make([]models.Selection, len(req.Selections))
 	for i, sel := range req.Selections {
 		selections[i] = convertSelectionRequest(sel)
@@ -115,6 +116,7 @@ func (h *Handler) PlaceAccumulatorBet(w http.ResponseWriter, r *http.Request) {
 		builder.SetContext(getDefaultContext(h.cfg))
 	}
 	
+
 	ticket := builder.Build(generateCorrelationID())
 	
 	// Send to MTS
@@ -164,6 +166,7 @@ func (h *Handler) PlaceSystemBet(w http.ResponseWriter, r *http.Request) {
 	// Build ticket using TicketBuilder
 	builder := models.NewTicketBuilder(h.cfg.OperatorID, req.TicketID)
 	
+	
 	selections := make([]models.Selection, len(req.Selections))
 	for i, sel := range req.Selections {
 		selections[i] = convertSelectionRequest(sel)
@@ -178,6 +181,7 @@ func (h *Handler) PlaceSystemBet(w http.ResponseWriter, r *http.Request) {
 		builder.SetContext(getDefaultContext(h.cfg))
 	}
 	
+
 	ticket := builder.Build(generateCorrelationID())
 	
 	// Send to MTS
@@ -227,6 +231,7 @@ func (h *Handler) PlaceBankerSystemBet(w http.ResponseWriter, r *http.Request) {
 	// Build ticket using TicketBuilder
 	builder := models.NewTicketBuilder(h.cfg.OperatorID, req.TicketID)
 	
+	
 	bankers := make([]models.Selection, len(req.Bankers))
 	for i, sel := range req.Bankers {
 		bankers[i] = convertSelectionRequest(sel)
@@ -246,6 +251,7 @@ func (h *Handler) PlaceBankerSystemBet(w http.ResponseWriter, r *http.Request) {
 		builder.SetContext(getDefaultContext(h.cfg))
 	}
 	
+
 	ticket := builder.Build(generateCorrelationID())
 	
 	// Send to MTS
@@ -295,6 +301,7 @@ func (h *Handler) PlacePresetSystemBet(w http.ResponseWriter, r *http.Request) {
 	// Build ticket using TicketBuilder
 	builder := models.NewTicketBuilder(h.cfg.OperatorID, req.TicketID)
 	
+	
 	selections := make([]models.Selection, len(req.Selections))
 	for i, sel := range req.Selections {
 		selections[i] = convertSelectionRequest(sel)
@@ -337,6 +344,7 @@ func (h *Handler) PlacePresetSystemBet(w http.ResponseWriter, r *http.Request) {
 		builder.SetContext(getDefaultContext(h.cfg))
 	}
 	
+
 	ticket := builder.Build(generateCorrelationID())
 	
 	// Send to MTS
@@ -452,6 +460,7 @@ func (h *Handler) PlaceMultiBet(w http.ResponseWriter, r *http.Request) {
 		builder.SetContext(getDefaultContext(h.cfg))
 	}
 	
+
 	ticket := builder.Build(generateCorrelationID())
 	
 	// Send to MTS

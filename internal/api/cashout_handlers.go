@@ -132,8 +132,8 @@ func buildCashoutRequest(req *CashoutRequest, operatorID int64) *models.CashoutR
 		payouts[i] = models.CashoutPayout{
 			Type:     p.Type,
 			Currency: p.Currency,
-			Amount:   fmt.Sprintf("%.8f", p.Amount),
-			Source:   p.Source,
+			Amount:   p.Amount, // Use the amount string directly
+			// Source is not sent to MTS as it's not in the schema
 		}
 	}
 	
@@ -166,6 +166,10 @@ func buildCashoutRequest(req *CashoutRequest, operatorID int64) *models.CashoutR
 				Type:      "cashout",
 				CashoutID: req.CashoutID,
 				Details:   detail,
+			},
+			Validation: &models.CashoutValidation{
+				Code:    1100,
+				Message: "Cashout accepted",
 			},
 		},
 	}

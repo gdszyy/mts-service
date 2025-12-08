@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/gdsZyy/mts-service/internal/config"
 	"github.com/gdsZyy/mts-service/internal/models"
@@ -303,6 +304,17 @@ func getDefaultContext(cfg *config.Config) *models.Context {
 			Type: "internet",
 			Lang: "EN",
 		},
-		LimitID: limitID,
+		EndCustomer: getDefaultEndCustomer(),
+		LimitID:     limitID,
+	}
+}
+
+// getDefaultEndCustomer returns a default end customer with random ID
+func getDefaultEndCustomer() *models.EndCustomer {
+	// Generate random customer ID
+	customerID := fmt.Sprintf("customer_%d", time.Now().UnixNano())
+	return &models.EndCustomer{
+		ID:         customerID,
+		Confidence: "1.00",
 	}
 }

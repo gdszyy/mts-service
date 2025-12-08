@@ -28,6 +28,8 @@ func (tb *TicketBuilder) SetContext(ctx *Context) *TicketBuilder {
 	return tb
 }
 
+
+
 // AddSingleBet adds a single bet to the ticket
 func (tb *TicketBuilder) AddSingleBet(selection Selection, stake Stake) *TicketBuilder {
 	bet := Bet{
@@ -216,19 +218,19 @@ func (tb *TicketBuilder) Build(correlationID string) *TicketRequest {
 		panic("ticket must contain at least one bet")
 	}
 	
-	return &TicketRequest{
-		OperatorID:    tb.operatorID,
-		CorrelationID: correlationID,
-		TimestampUTC:  time.Now().UnixMilli(),
-		Operation:     "ticket-placement",
-		Version:       "3.0",
-		Content: TicketContent{
-			Type:     "ticket",
-			TicketID: tb.ticketID,
-			Bets:     tb.bets,
-			Context:  tb.context,
-		},
-	}
+		return &TicketRequest{
+			OperatorID:    tb.operatorID,
+			CorrelationID: correlationID,
+			TimestampUTC:  time.Now().UnixMilli(),
+			Operation:     "ticket-placement",
+			Version:       "3.0",
+			Content: TicketContent{
+				Type:     "ticket",
+				TicketID: tb.ticketID,
+				Bets:     tb.bets,
+				Context:  tb.context,
+			},
+		}
 }
 
 // NewSelection creates a new standard selection

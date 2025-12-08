@@ -40,8 +40,8 @@ type CashoutPayout struct {
 	Type     string `json:"type"`     // "cash" or "free"
 	Currency string `json:"currency"` // Currency code (e.g., "EUR")
 	Amount   string `json:"amount"`   // Amount as string
-	Source   string `json:"source,omitempty"` // "cashout" or "bonus"
-	TraceID  string `json:"traceId,omitempty"` // Optional trace ID
+	// Source field is not supported in MTS schema
+	// TraceID  string `json:"traceId,omitempty"` // Optional trace ID
 }
 
 // CashoutValidation represents validation information for cashout-inform

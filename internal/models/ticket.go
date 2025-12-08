@@ -2,27 +2,28 @@ package models
 
 // TicketRequest represents a ticket placement request conforming to MTS Transaction 3.0 API standard
 type TicketRequest struct {
-	OperatorID    int64           `json:"operatorId"`    // Operator ID provided by Sportradar
-	CorrelationID string          `json:"correlationId"` // Client-defined string for request-response pairing
-	TimestampUTC  int64           `json:"timestampUtc"`  // Client submission timestamp in Unix milliseconds
-	Operation     string          `json:"operation"`     // Should be "ticket-placement" for ticket placement requests
-	Version       string          `json:"version"`       // Protocol version, should be "3.0"
-	Content       TicketContent   `json:"content"`       // Message body containing transaction details
+	OperatorID    int64         `json:"operatorId"`    // Operator ID provided by Sportradar
+	CorrelationID string        `json:"correlationId"` // Client-defined string for request-response pairing
+	TimestampUTC  int64         `json:"timestampUtc"`  // Client submission timestamp in Unix milliseconds
+	Operation     string        `json:"operation"`     // Should be "ticket-placement" for ticket placement requests
+	Version       string        `json:"version"`       // Protocol version, should be "3.0"
+	Content       TicketContent `json:"content"`       // Message body containing transaction details
 }
 
 // TicketContent represents the content of a ticket placement request
 type TicketContent struct {
-	Type     string       `json:"type"`     // Content type, should be "ticket"
-	TicketID string       `json:"ticketId"` // Client-defined ticket ID for unique identification
-	Bets     []Bet        `json:"bets"`     // Array of bets, must contain at least one bet
-	Context  *Context     `json:"context,omitempty"` // Optional transaction context information
+	Type     string   `json:"type"`               // Content type, should be "ticket"
+	TicketID string   `json:"ticketId"`           // Client-defined ticket ID for unique identification
+	Bets     []Bet    `json:"bets"`               // Array of bets, must contain at least one bet
+	Context  *Context `json:"context,omitempty"` // Optional transaction context information
 }
 
 // Context represents transaction context information
 type Context struct {
-	Channel *Channel `json:"channel,omitempty"` // Channel information
-	IP      string   `json:"ip,omitempty"`      // IP address
-	LimitID int64    `json:"limitId,omitempty"` // Limit ID
+	Channel     *Channel     `json:"channel,omitempty"`     // Channel information
+	IP          string       `json:"ip,omitempty"`          // IP address
+	EndCustomer *EndCustomer `json:"endCustomer,omitempty"` // End customer information
+	LimitID     int64        `json:"limitId,omitempty"`     // Limit ID
 }
 
 // Channel represents channel information within context
